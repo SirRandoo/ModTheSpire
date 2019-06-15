@@ -107,12 +107,6 @@ public class ModListWindow extends JFrame {
         } else {
             setLocation(geometry.getLocation());
         }
-
-        // Ensure the play button has focus
-        JRootPane rootPane = SwingUtilities.getRootPane(statusBar.getPlayButton());
-        rootPane.setDefaultButton(statusBar.getPlayButton());
-
-        EventQueue.invokeLater(statusBar.getPlayButton()::requestFocusInWindow);
     }
 
     private void initializeMenuBar() {
@@ -208,7 +202,7 @@ public class ModListWindow extends JFrame {
     private void initializeStatusBar() {
         statusBar = new AugmentedStatusBar();
 
-        statusBar.getPlayButton().addActionListener((ActionEvent event) -> startStS());
+        statusBar.addPlayActionListener((ActionEvent event) -> startStS());
     }
 
     /**
