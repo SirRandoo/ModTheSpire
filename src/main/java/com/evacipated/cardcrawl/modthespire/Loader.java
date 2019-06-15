@@ -3,8 +3,11 @@ package com.evacipated.cardcrawl.modthespire;
 import com.evacipated.cardcrawl.modthespire.lib.SpireConfig;
 import com.evacipated.cardcrawl.modthespire.steam.SteamSearch;
 import com.evacipated.cardcrawl.modthespire.steam.SteamWorkshop;
+import com.evacipated.cardcrawl.modthespire.ui.ModListWindow;
 import com.evacipated.cardcrawl.modthespire.ui.ModSelectWindow;
-import com.google.gson.*;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import com.vdurmont.semver4j.Semver;
 import javassist.ClassPool;
@@ -23,9 +26,9 @@ import java.lang.reflect.Type;
 import java.net.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
 import java.util.List;
 import java.util.Timer;
+import java.util.*;
 
 public class Loader
 {
@@ -49,7 +52,7 @@ public class Loader
     public static boolean allowBeta = false;
 
     static String[] ARGS;
-    private static ModSelectWindow ex;
+    private static ModListWindow ex;
 
     public static boolean isModLoaded(String modID)
     {
@@ -267,10 +270,10 @@ public class Loader
 
         EventQueue.invokeLater(() -> {
             ModInfo[] modInfos = getAllMods(workshopInfos);
-            ex = new ModSelectWindow(modInfos);
+            ex = new ModListWindow(modInfos);
             ex.setVisible(true);
 
-            ex.warnAboutMissingVersions();
+//            ex.warnAboutMissingVersions();
 
             String java_version = System.getProperty("java.version");
             if (!java_version.startsWith("1.8")) {
@@ -278,7 +281,7 @@ public class Loader
                 JOptionPane.showMessageDialog(null, msg, "Warning", JOptionPane.WARNING_MESSAGE);
             }
 
-            ex.startCheckingForMTSUpdate();
+//            ex.startCheckingForMTSUpdate();
         });
     }
 
