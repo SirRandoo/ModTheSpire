@@ -4,7 +4,6 @@ import com.evacipated.cardcrawl.modthespire.lib.SpireConfig;
 import com.evacipated.cardcrawl.modthespire.steam.SteamSearch;
 import com.evacipated.cardcrawl.modthespire.steam.SteamWorkshop;
 import com.evacipated.cardcrawl.modthespire.ui.ModListWindow;
-import com.evacipated.cardcrawl.modthespire.ui.ModSelectWindow;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
@@ -106,7 +105,7 @@ public class Loader
             Properties defaults = new Properties();
             defaults.setProperty("debug", Boolean.toString(false));
             defaults.setProperty("out-jar", Boolean.toString(false));
-            defaults.putAll(ModSelectWindow.getDefaults());
+            defaults.putAll(ModListWindow.getDefaults());
             MTS_CONFIG = new SpireConfig(null, "ModTheSpire", defaults);
         } catch (IOException e) {
             e.printStackTrace();
