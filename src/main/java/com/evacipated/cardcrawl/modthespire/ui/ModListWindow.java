@@ -6,17 +6,21 @@ package com.evacipated.cardcrawl.modthespire.ui;
 
 import com.evacipated.cardcrawl.modthespire.Loader;
 import com.evacipated.cardcrawl.modthespire.ModInfo;
+import com.evacipated.cardcrawl.modthespire.lib.ConfigUtils;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Enumeration;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * The main launcher window.
@@ -33,14 +37,15 @@ import java.util.Properties;
  * immediate information display and quality of life shortcuts,
  * such as a play button.
  */
-public class ModListWindow extends JFrame {
+public class ModListWindow extends JFrame implements WindowListener {
     private static Rectangle geometry = new Rectangle(0, 0, 800, 500);
     private ModInfo[] modInfos;
 
     // Top-down UI elements.
     private JMenuBar menuBar;
-    private JList<ComplexListItem> modList;
+    private ModListComponent modList;
     private ModView modView;
+    private JTextArea presetLabel;
     private AugmentedStatusBar statusBar;
 
     // Dialogs
@@ -49,6 +54,8 @@ public class ModListWindow extends JFrame {
     // Persistence
     private boolean isMaximized;
     private boolean isCentered;
+    private File preset = null;
+    private PresetTask task = null;
 
 
     public ModListWindow(ModInfo[] modInfos) {
@@ -63,6 +70,8 @@ public class ModListWindow extends JFrame {
         this.modInfos = modInfos;
         initializeUI();
         validateUserPreferences();
+
+        addWindowListener(this);
 
         Enumeration<Object> ui = UIManager.getDefaults().keys();
 
@@ -84,9 +93,36 @@ public class ModListWindow extends JFrame {
         return defaults;
     }
 
+    public static File getDefaultPreset() {
+        File defaultPreset = new File(ConfigUtils.CONFIG_DIR + File.separator + "default.mts");
+
+        if (!defaultPreset.exists()) {
+            new Thread(() -> {
+                try {
+                    FileWriter fileWriter = new FileWriter(defaultPreset);
+                    Properties properties = new Properties();
+
+                    for (ModInfo modInfo : Loader.MODINFOS) {
+                        if (Objects.isNull(modInfo.ID)) continue;
+
+                        properties.setProperty(modInfo.ID + ".enabled", Boolean.toString(false));
+                        properties.setProperty(modInfo.ID + ".position", Integer.toString(properties.size() / 2));
+                    }
+
+                    properties.store(fileWriter, "The default ModTheSpire preset.");
+
+                } catch (IOException e) {
+                    System.out.println("Could not create default.mts file!  (" + e.toString() + ")");
+                }
+            }).start();
+        }
+
+        return defaultPreset;
+    }
+
     private void initializeUI() {
         setTitle("ModTheSpire (v" + Loader.MTS_VERSION + ")");
-        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
         setResizable(true);
 
         initializeMenuBar();
@@ -165,10 +201,20 @@ public class ModListWindow extends JFrame {
 
     private JPanel initializeModView() {
         JPanel panel = new JPanel();
+        JPanel listPanel = new JPanel();
 
         // Create the mod view elements
-        modList = new JList<ComplexListItem>();
+        modList = new ModListComponent();
         modView = new ModView();
+        presetLabel = new JTextArea();
+
+        presetLabel.setText("Preset: default");
+        presetLabel.setWrapStyleWord(true);
+        presetLabel.setLineWrap(true);
+        presetLabel.setEditable(false);
+        presetLabel.setAutoscrolls(false);
+        presetLabel.setOpaque(false);
+        presetLabel.setFont(modList.getFont());
 
         modView.setBorder(new EmptyBorder(0, 10, 0, 0));
         modView.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
@@ -188,12 +234,18 @@ public class ModListWindow extends JFrame {
         modList.setDragEnabled(true);
         modList.setDropMode(DropMode.INSERT);
         modList.setOpaque(true);
+        modList.setVisible(true);
 
-        for (ModInfo mod : modInfos) modList.add(new ComplexListItem(mod.Name, null));
+//        for (ModInfo mod : modInfos) modList.add(new ComplexListItem(mod.Name, null));
+
+        listPanel.setBorder(new EmptyBorder(0, 0, 0, 0));
+        listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
+        listPanel.add(presetLabel);
+        listPanel.add(modList);
 
         panel.setBorder(new EmptyBorder(15, 15, 15, 15));
         panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
-        panel.add(modList);
+        panel.add(listPanel);
         panel.add(modView);
 
         return panel;
@@ -462,43 +514,6 @@ public class ModListWindow extends JFrame {
         return isValidLocation(size);
     }
 
-    private void saveWindowLocation() {
-        Point location = getLocationOnScreen();
-
-        Loader.MTS_CONFIG.setInt("launcher.position.x", location.x);
-        Loader.MTS_CONFIG.setInt("launcher.position.y", location.y);
-
-        try {
-            Loader.MTS_CONFIG.save();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void saveWindowMaximize() {
-        Loader.MTS_CONFIG.setBool("launcher.maximized", isMaximized);
-
-        try {
-            Loader.MTS_CONFIG.save();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void saveWindowDimensions(Dimension dimension) {
-        Loader.MTS_CONFIG.setInt("launcher.geometry.width", dimension.width);
-        Loader.MTS_CONFIG.setInt("launcher.geometry.height", dimension.height);
-
-        try {
-            Loader.MTS_CONFIG.save();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     public void setModInfo(ModInfo info) {
         if (info == null) {
             modView.setViewVisible(false);
@@ -512,6 +527,195 @@ public class ModListWindow extends JFrame {
             modView.setCredits(info.Credits);
             modView.setDescription(info.Description);
             modView.setAuthors(info.Authors);
+        }
+    }
+
+    /**
+     * Invoked the first time the launcher window is made visible.
+     * <p>
+     * This override is responsible for loading the user's last known preset.
+     */
+    @Override
+    public void windowOpened(WindowEvent e) {
+        String lastPreset = Loader.MTS_CONFIG.getString("launcher.presets.last");
+
+        if (Objects.isNull(lastPreset)) lastPreset = getDefaultPreset().toString();
+
+        preset = new File(lastPreset);
+        task = new PresetTask(preset);
+        task.execute();
+    }
+
+    /**
+     * Invoked when the launcher window is about to close.
+     * <p>
+     * This method is responsible for saving user preferences.
+     */
+    @Override
+    public void windowClosing(WindowEvent event) {
+        System.out.println("Performing closing operations...");
+        Window window = event.getWindow();
+
+        if (Loader.DEBUG) System.out.println("Saving window geometry...");
+        Loader.MTS_CONFIG.setInt("launcher.geometry.width", window.getSize().width);
+        Loader.MTS_CONFIG.setInt("launcher.geometry.height", window.getSize().height);
+        Loader.MTS_CONFIG.setBool("launcher.maximized", isMaximized);
+
+        if (Loader.DEBUG) System.out.println("Saving window position...");
+        if (!isCentered) {
+            Loader.MTS_CONFIG.setInt("launcher.position.x", window.getX());
+            Loader.MTS_CONFIG.setInt("launcher.position.y", window.getY());
+        } else {
+            Loader.MTS_CONFIG.setString("launcher.position.x", "center");
+            Loader.MTS_CONFIG.setString("launcher.position.y", "center");
+        }
+
+        if (Loader.DEBUG) System.out.println("Saving preset information...");
+        Loader.MTS_CONFIG.setString("launcher.presets.last", Objects.isNull(preset) ? getDefaultPreset().toString() : preset.toString());
+
+        if (Loader.DEBUG) System.out.println("Saving user preferences...");
+        try {
+            Loader.MTS_CONFIG.save();
+        } catch (IOException e) {
+            System.out.println("Could not save user preferences!");
+            e.printStackTrace();
+        }
+
+        // Clean up the launcher's ui elements
+        this.dispose();
+    }
+
+    /**
+     * Invoked when the launcher window is closed.
+     */
+    @Override
+    public void windowClosed(WindowEvent e) {
+        // Ignored
+    }
+
+    /**
+     * Invoked when the launcher window is iconified.
+     */
+    @Override
+    public void windowIconified(WindowEvent e) {
+        // Ignored
+    }
+
+    /**
+     * Invoked when a window is changed from a minimized
+     * to a normal state.
+     */
+    @Override
+    public void windowDeiconified(WindowEvent e) {
+        // Ignored
+    }
+
+    /**
+     * Invoked when the Window is set to be the active Window.  Only
+     * a Frame or a Dialog can be the active Window.  The native windowing
+     * system may denote the active Window or its children with special
+     * decorations, such as a highlighted title bar.  The active Window is
+     * always either the focused Window, or the first Frame or Dialog that
+     * is an owner of the focused Window.
+     */
+    @Override
+    public void windowActivated(WindowEvent e) {
+        // Ignored
+    }
+
+    /**
+     * Invoked when a Window is no longer the active Window. Only a Frame or a
+     * Dialog can be the active Window. The native windowing system may denote
+     * the active Window or its children with special decorations, such as a
+     * highlighted title bar. The active Window is always either the focused
+     * Window, or the first Frame or Dialog that is an owner of the focused
+     * Window.
+     */
+    @Override
+    public void windowDeactivated(WindowEvent e) {
+        // Ignored
+    }
+
+    /**
+     * A background task for updating the display to reflect the
+     * end-user's selected preset.
+     */
+    private class PresetTask extends SwingWorker<Void, ModListWindow> {
+        private File target;
+
+        public PresetTask(File target) {
+            this.target = target;
+        }
+
+        /**
+         * Opens the end-user's requested preset, and updates the
+         * mod list to reflect the preset's values.
+         */
+        @Override
+        protected Void doInBackground() throws Exception {
+            // If the target is null for some reason, throw an IOException.
+            if (Objects.isNull(target)) throw new IOException("Preset file cannot be null!");
+
+            // Some declarations
+            FileReader fileReader = new FileReader(target);
+            Properties preset = new Properties();
+            ArrayList<PresetItem> newModList = new ArrayList<>();
+
+            // Load the preset properties.
+            preset.load(fileReader);
+
+            // Sort the mod list.
+            for (ModInfo modInfo : Loader.MODINFOS) {
+                // If a mod doesn't have an ID, the mod will be omitted.
+                // Omitted mods won't be displayed.
+                if (Objects.isNull(modInfo.ID)) {
+                    System.out.println("Mod @ " + modInfo.jarURL.toString() + " has a null ID!");
+                    continue;
+                }
+
+                String modPositionRaw = preset.getProperty(modInfo.ID + ".position");
+                String modEnabledRaw = preset.getProperty(modInfo.ID + ".enabled");
+
+                int modPosition = -1;
+                boolean modEnabled = false;
+
+                // Cast the raw values
+                if (modPositionRaw != null) modPosition = Integer.parseInt(modPositionRaw);
+                if (modEnabledRaw != null) modEnabled = Boolean.parseBoolean(modEnabledRaw);
+
+                ComplexListItem item = new ComplexListItem();
+
+                item.setText(Objects.isNull(modInfo.Name) ? modInfo.ID : modInfo.Name);
+                item.setCheckState(modEnabled);
+
+                PresetItem presetItem = new PresetItem(item, modPosition == -1 ? 500 + newModList.size() : modPosition);
+                newModList.add(presetItem);
+
+                Collections.sort(newModList);
+            }
+
+            modList.removeAll();
+
+            for (PresetItem presetItem : newModList) {
+                modList.add(presetItem.item);
+            }
+
+            return null;
+        }
+    }
+
+    private class PresetItem implements Comparable {
+        private ComplexListItem item;
+        private int position;
+
+        public PresetItem(ComplexListItem item, int position) {
+            this.item = item;
+            this.position = position;
+        }
+
+        @Override
+        public int compareTo(Object o) {
+            return Integer.compare(this.position, ((PresetItem) o).position);
         }
     }
 }
