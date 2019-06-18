@@ -125,8 +125,18 @@ public class ModListWindow extends JFrame implements WindowListener {
     }
 
     private void initializeUI() {
-        setTitle("ModTheSpire (v" + Loader.MTS_VERSION + ")");
+        // Set the look and feel of the ui.
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
+            e.printStackTrace();
+        }
+
+        // Instead of using EXIT_ON_CLOSE, we'll use HIDE_ON_CLOSE
+        // to ensure our window listener events fire.
         setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
+        setTitle("ModTheSpire");
         setResizable(true);
 
         initializeMenuBar();
