@@ -10,6 +10,7 @@ import com.evacipated.cardcrawl.modthespire.lib.ConfigUtils;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
@@ -55,7 +56,8 @@ public class ModListWindow extends JFrame implements WindowListener {
     private boolean isMaximized;
     private boolean isCentered;
     private File preset = null;
-    private PresetTask task = null;
+    private PresetTask presetTask = null;
+    private boolean outJarRequested = false;
 
 
     public ModListWindow(ModInfo[] modInfos) {
@@ -87,7 +89,7 @@ public class ModListWindow extends JFrame implements WindowListener {
         defaults.setProperty("launcher.geometry.width", Integer.toString(geometry.width));
         defaults.setProperty("launcher.geometry.height", Integer.toString(geometry.height));
         defaults.setProperty("launcher.maximized", Boolean.toString(false));
-        defaults.setProperty("launcher.presets.last", "default");
+        defaults.setProperty("launcher.presets.last", getDefaultPreset().toString());
 
         return defaults;
     }
@@ -100,7 +102,7 @@ public class ModListWindow extends JFrame implements WindowListener {
     public static File getDefaultPreset() {
         File defaultPreset = new File(ConfigUtils.CONFIG_DIR + File.separator + "default.mts");
 
-        if (!defaultPreset.exists()) {
+        if (!defaultPreset.exists() && !Objects.isNull(Loader.MODINFOS)) {
             new Thread(() -> {
                 try {
                     FileWriter fileWriter = new FileWriter(defaultPreset);
@@ -119,11 +121,50 @@ public class ModListWindow extends JFrame implements WindowListener {
                     System.out.println("Could not create default.mts file!  (" + e.toString() + ")");
                 }
             }).start();
+        } else {
+            if (!Objects.isNull(Loader.MODINFOS)) {
+                System.out.println("Mod infos: " + Arrays.toString(Loader.MODINFOS));
+            } else {
+                System.out.println("Mod info is null!");
+            }
         }
 
         return defaultPreset;
     }
 
+    /**
+     * Generates a preset properties object from the
+     * current list of mods.  This method stores the
+     * mod's current state and position to a Properties
+     * object to use for saving.
+     */
+    public Properties generatePresetProperties() {
+        Properties properties = new Properties();
+
+        for (int index = 0; index < modList.getModel().getSize(); index++) {
+            ComplexListItem item = modList.getModel().getElementAt(index);
+
+            for (ModInfo modInfo : Loader.MODINFOS) {
+                if (Objects.isNull(modInfo.ID)) continue;
+
+                String displayName = modInfo.Name;
+
+                if (Objects.isNull(displayName)) displayName = modInfo.ID;
+
+                if (displayName.equalsIgnoreCase(item.getText())) {
+                    properties.setProperty(modInfo.ID.toLowerCase() + ".enabled", Boolean.toString(item.getCheckState()));
+                    properties.setProperty(modInfo.ID.toLowerCase() + ".position", Integer.toString(index));
+                    break;
+                }
+            }
+        }
+
+        return properties;
+    }
+
+    /**
+     * Initializes the launcher's ui.
+     */
     private void initializeUI() {
         // Set the look and feel of the ui.
         try {
@@ -179,10 +220,22 @@ public class ModListWindow extends JFrame implements WindowListener {
         loadPreset.addActionListener((ActionEvent event) -> loadPreset());
 
         JMenuItem savePreset = new JMenuItem("Save Preset");
-        savePreset.addActionListener((ActionEvent event) -> savePreset(true));
+        savePreset.addActionListener((ActionEvent event) -> savePreset());
 
         JMenuItem saveAsPreset = new JMenuItem("Save Preset as...");
-        saveAsPreset.addActionListener((ActionEvent event) -> savePreset());
+        saveAsPreset.addActionListener((ActionEvent event) -> {
+            JFileChooser fileChooser = new JFileChooser(ConfigUtils.CONFIG_DIR);
+            fileChooser.setFileFilter(new FileNameExtensionFilter("ModTheSpire Preset", "mts"));
+            fileChooser.setSelectedFile(new File("customPreset.mts"));
+
+            int result = fileChooser.showSaveDialog(this);
+
+            if (result == JFileChooser.APPROVE_OPTION) {
+                preset = fileChooser.getSelectedFile();
+            }
+
+            savePreset();
+        });
 
         JMenuItem settingsAction = new JMenuItem("Settings..");
         settingsAction.addActionListener((ActionEvent event) -> openSettings());
@@ -467,6 +520,16 @@ public class ModListWindow extends JFrame implements WindowListener {
      * a file prompt to load a preset.
      */
     private void loadPreset() {
+        JFileChooser fileChooser = new JFileChooser(ConfigUtils.CONFIG_DIR);
+        fileChooser.setFileFilter(new FileNameExtensionFilter("ModTheSpire Preset", "mts"));
+
+        int result = fileChooser.showOpenDialog(this);
+
+        if (result == JFileChooser.APPROVE_OPTION) {
+            preset = fileChooser.getSelectedFile();
+            presetTask = new PresetTask(preset);
+            presetTask.execute();
+        }
     }
 
     /**
@@ -478,6 +541,9 @@ public class ModListWindow extends JFrame implements WindowListener {
      * will save the preset data to it.
      */
     private void savePreset() {
+        new SaveFileTask(preset, generatePresetProperties()).execute();
+
+        statusBar.showMessage("Preset saved!");  // TODO: Determine if this is accurate
     }
 
     /**
@@ -610,8 +676,8 @@ public class ModListWindow extends JFrame implements WindowListener {
         if (Objects.isNull(lastPreset)) lastPreset = getDefaultPreset().toString();
 
         preset = new File(lastPreset);
-        task = new PresetTask(preset);
-        task.execute();
+        presetTask = new PresetTask(preset);
+        presetTask.execute();
     }
 
     /**
@@ -708,10 +774,10 @@ public class ModListWindow extends JFrame implements WindowListener {
      * A background presetTask for updating the display to reflect the
      * end-user's selected preset.
      */
-    private class PresetTask extends SwingWorker<Void, ModListWindow> {
+    private class PresetTask extends SwingWorker<Void, Void> {
         private File target;
 
-        public PresetTask(File target) {
+        PresetTask(File target) {
             this.target = target;
         }
 
@@ -759,6 +825,7 @@ public class ModListWindow extends JFrame implements WindowListener {
                 PresetItem presetItem = new PresetItem(item, modPosition == -1 ? 500 + newModList.size() : modPosition);
                 newModList.add(presetItem);
 
+                //noinspection unchecked
                 Collections.sort(newModList);
             }
 
@@ -770,6 +837,14 @@ public class ModListWindow extends JFrame implements WindowListener {
 
             return null;
         }
+
+        /**
+         * Updates the launcher to display the new preset.
+         */
+        @Override
+        protected void done() {
+            presetLabel.setText(target.getName().substring(0, target.getName().lastIndexOf('.')));
+        }
     }
 
     /**
@@ -779,7 +854,7 @@ public class ModListWindow extends JFrame implements WindowListener {
         private ComplexListItem item;
         private int position;
 
-        public PresetItem(ComplexListItem item, int position) {
+        PresetItem(ComplexListItem item, int position) {
             this.item = item;
             this.position = position;
         }
