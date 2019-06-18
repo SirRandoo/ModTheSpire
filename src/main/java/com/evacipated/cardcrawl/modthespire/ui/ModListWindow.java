@@ -349,6 +349,7 @@ public class ModListWindow extends JFrame implements WindowListener {
     private void initializeStatusBar() {
         statusBar = new AugmentedStatusBar();
 
+        statusBar.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, getBackground().darker()));
         statusBar.addPlayActionListener((ActionEvent event) -> startStS());
         statusBar.addDumpActionListener((ActionEvent event) -> {
             outJarRequested = true;
