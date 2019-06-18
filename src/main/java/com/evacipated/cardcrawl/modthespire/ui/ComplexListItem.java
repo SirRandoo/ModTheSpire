@@ -140,6 +140,13 @@ public class ComplexListItem extends JPanel {
     }
 
     /**
+     * Gets the JCheckBox for the item.
+     */
+    public JCheckBox getCheckBox() {
+        return label;
+    }
+
+    /**
      * Sets the list item's display text.
      */
     public void setText(String text) {
@@ -196,11 +203,11 @@ public class ComplexListItem extends JPanel {
     /**
      * The different sources a mod item can originate from.
      *
-     * <h3>GITHUB</h3>
-     * A mod item originated from a Github repository.
+     * <h3>OTHER</h3>
+     * A mod item originated from a non-workshop repository.
      *
      * <h3>WORKSHOP</h3>
      * A mod item originated from the Steam workshop.
      */
-    enum Sources {GITHUB, WORKSHOP}
+    enum Sources {OTHER, WORKSHOP}
 }
