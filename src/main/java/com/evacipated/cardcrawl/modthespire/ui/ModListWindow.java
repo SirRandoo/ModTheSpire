@@ -605,9 +605,9 @@ public class ModListWindow extends JFrame implements WindowListener {
         contents.append("<html>");
 
         if (this.getIconImage() != null) icon = new ImageIcon(this.getIconImage());
+        AboutWindow about = new AboutWindow(this);
 
         try {
-            AboutWindow about = new AboutWindow(this);
             about.setContents(contents.toString());
 
             if (icon != null) about.setIcon(icon);
@@ -616,6 +616,8 @@ public class ModListWindow extends JFrame implements WindowListener {
         } catch (HeadlessException e) {
             System.out.println("Cannot display about dialog in a headless environment!");
             e.printStackTrace();
+        } finally {
+            about.dispose();
         }
     }
 
