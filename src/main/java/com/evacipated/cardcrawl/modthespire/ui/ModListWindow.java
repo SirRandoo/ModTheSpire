@@ -67,13 +67,18 @@ public class ModListWindow extends JFrame implements WindowListener {
             validateUserPreferences();
         });
 
-        Enumeration<Object> ui = UIManager.getDefaults().keys();
-
-        while (ui.hasMoreElements()) {
-            System.out.println(ui.nextElement().toString());
-        }
+//
+//        Enumeration<Object> ui = UIManager.getDefaults().keys();
+//
+//        while (ui.hasMoreElements()) {
+//            System.out.println(ui.nextElement().toString());
+//        }
     }
 
+    /**
+     * Returns the default properties the launcher uses
+     * to provide basic functionality.
+     */
     public static Properties getDefaults() {
         Properties defaults = new Properties();
 
@@ -87,6 +92,11 @@ public class ModListWindow extends JFrame implements WindowListener {
         return defaults;
     }
 
+    /**
+     * Generates a default preset using the list the
+     * loader generated.  This method does not attempt
+     * to resolve load order.
+     */
     public static File getDefaultPreset() {
         File defaultPreset = new File(ConfigUtils.CONFIG_DIR + File.separator + "default.mts");
 
@@ -139,6 +149,13 @@ public class ModListWindow extends JFrame implements WindowListener {
         }
     }
 
+    /**
+     * Initializes the menu bar.
+     * <p>
+     * The menu bar is the top-most panel of the launcher.
+     * It houses the bulk of the launcher's actions, such
+     * as opening the settings dialog.
+     */
     private void initializeMenuBar() {
         menuBar = new JMenuBar();
 
@@ -193,6 +210,14 @@ public class ModListWindow extends JFrame implements WindowListener {
         menuBar.add(helpMenu);
     }
 
+    /**
+     * Initializes the mod view.
+     * <p>
+     * The mod view is the central panel of the launcher.
+     * Its used to display the current list of loaded mods,
+     * and provide detailed information about them, should
+     * the end-user request it.
+     */
     private JPanel initializeModView() {
         JPanel panel = new JPanel();
         JPanel listPanel = new JPanel();
@@ -245,6 +270,14 @@ public class ModListWindow extends JFrame implements WindowListener {
         return panel;
     }
 
+    /**
+     * Initializes the status bar.
+     * <p>
+     * The status bar is the bottom-most panel of the launcher.
+     * Its used to provide shortcut buttons to the end-user,
+     * display in-app messages, and to provide real-time feedback
+     * on certain actions via its progress bar.
+     */
     private void initializeStatusBar() {
         statusBar = new AugmentedStatusBar();
 
@@ -380,6 +413,14 @@ public class ModListWindow extends JFrame implements WindowListener {
         }
     }
 
+    /**
+     * Starts Slay the Spire with the selected preset.
+     * <p>
+     * If the end-user is using the beta version of Slay
+     * the Spire, the launcher will display a prompt
+     * notifying the user that mods may not work with the
+     * beta version.
+     */
     private void startStS() {
         // If the user launches Slay the Spire, but they don't allow ModTheSpire
         // to run on the beta version, we'll display a prompt asking the user if
@@ -408,18 +449,34 @@ public class ModListWindow extends JFrame implements WindowListener {
         t.start();
     }
 
+    /**
+     * Invoked when the end-user clicks the "Load Preset..."
+     * action in the file menu.
+     * <p>
+     * This method is responsible for providing the user with
+     * a file prompt to load a preset.
+     */
     private void loadPreset() {
     }
 
-    private void savePreset(File preset) {
-    }
-
-    private void savePreset(boolean sameFile) {
-    }
-
+    /**
+     * Invoked when the end-user clicks the "Save preset"
+     * action in the file menu.
+     * <p>
+     * This method is responsible for providing the user with
+     * a save prompt.  If the user selects a file, the launcher
+     * will save the preset data to it.
+     */
     private void savePreset() {
     }
 
+    /**
+     * Invoked when the end-user clicks the "Settings..."
+     * action in the file menu.
+     * <p>
+     * This method is responsible for displaying the settings
+     * dialog to the end-user.
+     */
     private void openSettings() {
         if (settingsWindow == null) settingsWindow = new SettingsWindow(this);
 
@@ -443,6 +500,13 @@ public class ModListWindow extends JFrame implements WindowListener {
         }
     }
 
+    /**
+     * Invoked when the end-user clicks the "About"
+     * action in the help menu.
+     * <p>
+     * This method is responsible for displaying a brief
+     * overview of ModTheSpire, among other metadata.
+     */
     private void showAbout() {
         StringBuilder contents = new StringBuilder();
         ImageIcon icon = null;
@@ -631,7 +695,7 @@ public class ModListWindow extends JFrame implements WindowListener {
     }
 
     /**
-     * A background task for updating the display to reflect the
+     * A background presetTask for updating the display to reflect the
      * end-user's selected preset.
      */
     private class PresetTask extends SwingWorker<Void, ModListWindow> {
@@ -698,6 +762,9 @@ public class ModListWindow extends JFrame implements WindowListener {
         }
     }
 
+    /**
+     * A utility class for housing comparable mod items.
+     */
     private class PresetItem implements Comparable {
         private ComplexListItem item;
         private int position;
