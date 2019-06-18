@@ -712,4 +712,40 @@ public class ModListWindow extends JFrame implements WindowListener {
             return Integer.compare(this.position, ((PresetItem) o).position);
         }
     }
+
+    /**
+     * Saves a file (hopefully) away from the Swing threads.
+     */
+    private class SaveFileTask extends SwingWorker<Void, Void> {
+        private File target;
+        private Object data;
+
+        SaveFileTask(File target, Object data) {
+            this.target = target;
+            this.data = data;
+        }
+
+        /**
+         * Saves the data to the requested file location.
+         *
+         * @throws IOException The file could not be saved for
+         *                     some reason, such as a permission
+         *                     error.
+         */
+        @Override
+        protected Void doInBackground() throws Exception {
+            if (!Objects.isNull(data)) {
+                FileWriter fileWriter = new FileWriter(target);
+
+                if (!Objects.isNull(data) && data instanceof Properties) {
+                    ((Properties) data).store(fileWriter, "");
+                }
+
+                fileWriter.flush();
+                fileWriter.close();
+            }
+
+            return null;
+        }
+    }
 }
