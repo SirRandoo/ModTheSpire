@@ -331,9 +331,22 @@ public class ModListWindow extends JFrame implements WindowListener {
         listPanel.add(modList);
 
         panel.setBorder(new EmptyBorder(15, 15, 15, 15));
-        panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
-        panel.add(listPanel);
-        panel.add(modView);
+        panel.setLayout(new GridBagLayout());
+
+        GridBagConstraints constraints = new GridBagConstraints();
+        constraints.weightx = 0.4;
+        constraints.weighty = 1.0;
+        constraints.gridx = 0;
+        constraints.gridy = 0;
+        constraints.insets = new Insets(0, 0, 0, 0);
+        constraints.fill = GridBagConstraints.VERTICAL;
+
+        panel.add(listPanel, constraints);
+
+        constraints.gridx = 1;
+        constraints.weightx = 1.0;
+        constraints.fill = GridBagConstraints.BOTH;
+        panel.add(modView, constraints);
 
         return panel;
     }
