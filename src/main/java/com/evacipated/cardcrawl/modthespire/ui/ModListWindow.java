@@ -59,19 +59,13 @@ public class ModListWindow extends JFrame implements WindowListener {
 
 
     public ModListWindow(ModInfo[] modInfos) {
-        try {
-            // Attempt to tailor the window's UI to the user's operating system's.
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
-            e.printStackTrace();
-        }
-
         this.modInfos = modInfos;
-        initializeUI();
-        validateUserPreferences();
-
         addWindowListener(this);
+
+        SwingUtilities.invokeLater(() -> {
+            initializeUI();
+            validateUserPreferences();
+        });
 
         Enumeration<Object> ui = UIManager.getDefaults().keys();
 
