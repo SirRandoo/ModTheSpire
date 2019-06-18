@@ -94,6 +94,8 @@ public class AugmentedStatusBar extends JPanel {
         message.setBorder(null);
 
         progressBar = new JProgressBar();
+        progressBar.setMaximumSize(new Dimension(250, 20));
+        progressBar.setVisible(false);
 
         timer = new Timer(0, (ActionEvent event) -> message.setText(""));
         timer.setRepeats(false);
