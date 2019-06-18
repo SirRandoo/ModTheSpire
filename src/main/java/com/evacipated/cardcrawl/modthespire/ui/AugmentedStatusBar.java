@@ -89,7 +89,6 @@ public class AugmentedStatusBar extends JPanel {
         dumpJar.setMargin(new Insets(0, 6, 0, 6));
         dumpJar.setMaximumSize(new Dimension(dumpJar.getIcon().getIconWidth() + 4, dumpJar.getIcon().getIconHeight() + 4));
         dumpJar.setSize(dumpJar.getMaximumSize());
-        dumpJar.addActionListener((ActionEvent event) -> Loader.OUT_JAR = true);
 
         message = new JLabel();
         message.setBorder(null);
@@ -126,6 +125,26 @@ public class AugmentedStatusBar extends JPanel {
      */
     public void removePlayActionListener(ActionListener l) {
         playSpire.removeActionListener(l);
+    }
+
+    /**
+     * Adds an action listener to the dump jar button on the
+     * status bar.
+     *
+     * @param l The action listener to install.
+     */
+    public void addDumpActionListener(ActionListener l) {
+        dumpJar.addActionListener(l);
+    }
+
+    /**
+     * Removes an action listener from the dump jar button
+     * on the status bar.
+     *
+     * @param l The action listener to remove.
+     */
+    public void removeDumpActionListener(ActionListener l) {
+        dumpJar.removeActionListener(l);
     }
 
     /**
