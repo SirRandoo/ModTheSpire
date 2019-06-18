@@ -55,6 +55,8 @@ public class ModListWindow extends JFrame implements WindowListener {
     // Persistence
     private boolean isMaximized;
     private boolean isCentered;
+
+    // Internals
     private File preset = null;
     private PresetTask presetTask = null;
     private boolean outJarRequested = false;
@@ -183,15 +185,18 @@ public class ModListWindow extends JFrame implements WindowListener {
         initializeMenuBar();
         initializeStatusBar();
 
-        statusBar.setOpaque(true);
-
+        // Add all the components to the launcher.
         getContentPane().add(menuBar, BorderLayout.NORTH);
         getContentPane().add(initializeModView(), BorderLayout.CENTER);
         getContentPane().add(statusBar, BorderLayout.SOUTH);
 
         pack();
+
+        // To ensure the launcher doesn't get shrunk too far below
+        // the recommended size.
         setMinimumSize(new Dimension(geometry.width, geometry.height));
 
+        // Move the launcher window to the position we have saved.
         if (isCentered) {
             setLocationRelativeTo(null);
 
@@ -345,6 +350,19 @@ public class ModListWindow extends JFrame implements WindowListener {
         statusBar = new AugmentedStatusBar();
 
         statusBar.addPlayActionListener((ActionEvent event) -> startStS());
+        statusBar.addDumpActionListener((ActionEvent event) -> {
+            outJarRequested = true;
+            Loader.OUT_JAR = true;
+            startStS();
+
+            if (Desktop.isDesktopSupported()) {
+                try {
+                    Desktop.getDesktop().open(new File(System.getProperty("user.dir")));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 
     /**
@@ -485,6 +503,13 @@ public class ModListWindow extends JFrame implements WindowListener {
      * beta version.
      */
     private void startStS() {
+        // Ensure the loader isn't in dump mode
+        if (Loader.OUT_JAR && !outJarRequested) {
+            Loader.OUT_JAR = false;
+        } else if (outJarRequested) {
+            outJarRequested = false;
+        }
+
         // If the user launches Slay the Spire, but they don't allow ModTheSpire
         // to run on the beta version, we'll display a prompt asking the user if
         // they would like to continue.  If they don't want to, the dialog will
