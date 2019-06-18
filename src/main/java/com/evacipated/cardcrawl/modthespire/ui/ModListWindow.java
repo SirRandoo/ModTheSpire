@@ -565,7 +565,9 @@ public class ModListWindow extends JFrame implements WindowListener {
         int result = fileChooser.showOpenDialog(this);
 
         if (result == JFileChooser.APPROVE_OPTION) {
-            preset = fileChooser.getSelectedFile();
+            File preset = fileChooser.getSelectedFile();
+
+            setPreset(preset);
             presetTask = new PresetTask(preset);
             presetTask.execute();
         }
@@ -583,6 +585,16 @@ public class ModListWindow extends JFrame implements WindowListener {
         new SaveFileTask(preset, generatePresetProperties()).execute();
 
         statusBar.showMessage("Preset saved!");  // TODO: Determine if this is accurate
+    }
+
+    /**
+     * Updates the current preset the launcher is using.
+     *
+     * @param preset The new preset.
+     */
+    private void setPreset(File preset) {
+        presetLabel.setText("Preset: " + preset.getName().substring(0, preset.getName().lastIndexOf('.')));
+        this.preset = preset;
     }
 
     /**
@@ -883,14 +895,6 @@ public class ModListWindow extends JFrame implements WindowListener {
             }
 
             return null;
-        }
-
-        /**
-         * Updates the launcher to display the new preset.
-         */
-        @Override
-        protected void done() {
-            presetLabel.setText(target.getName().substring(0, target.getName().lastIndexOf('.')));
         }
     }
 
