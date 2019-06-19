@@ -111,7 +111,7 @@ public class ModListWindow extends JFrame implements WindowListener {
                     FileWriter fileWriter = new FileWriter(defaultPreset);
                     Properties properties = new Properties();
 
-                    for (ModInfo modInfo : Loader.MODINFOS) {
+                    for (ModInfo modInfo : modInfos) {
                         if (Objects.isNull(modInfo.ID)) continue;
 
                         properties.setProperty(modInfo.ID + ".enabled", Boolean.toString(false));
@@ -141,7 +141,7 @@ public class ModListWindow extends JFrame implements WindowListener {
         for (int index = 0; index < modList.getModel().getSize(); index++) {
             ComplexListItem item = modList.getModel().getElementAt(index);
 
-            for (ModInfo modInfo : Loader.MODINFOS) {
+            for (ModInfo modInfo : modInfos) {
                 if (Objects.isNull(modInfo.ID)) continue;
 
                 String displayName = modInfo.Name;
@@ -862,7 +862,7 @@ public class ModListWindow extends JFrame implements WindowListener {
             preset.load(fileReader);
 
             // Sort the mod list.
-            for (ModInfo modInfo : Loader.MODINFOS) {
+            for (ModInfo modInfo : modInfos) {
                 // If a mod doesn't have an ID, the mod will be omitted.
                 // Omitted mods won't be displayed.
                 if (Objects.isNull(modInfo.ID)) {
