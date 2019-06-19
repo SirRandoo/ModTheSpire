@@ -833,7 +833,7 @@ public class ModListWindow extends JFrame implements WindowListener {
      * A background presetTask for updating the display to reflect the
      * end-user's selected preset.
      */
-    private class PresetTask extends SwingWorker<Void, Void> {
+    private class PresetTask extends SwingWorker<ArrayList<PresetItem>, Void> {
         private File target;
 
         PresetTask(File target) {
@@ -845,7 +845,7 @@ public class ModListWindow extends JFrame implements WindowListener {
          * mod list to reflect the preset's values.
          */
         @Override
-        protected Void doInBackground() throws Exception {
+        protected ArrayList<PresetItem> doInBackground() throws Exception {
             // If the target is null for some reason, throw an IOException.
             if (Objects.isNull(target)) throw new IOException("Preset file cannot be null!");
 
@@ -884,17 +884,10 @@ public class ModListWindow extends JFrame implements WindowListener {
                 PresetItem presetItem = new PresetItem(item, modPosition == -1 ? 500 + newModList.size() : modPosition);
                 newModList.add(presetItem);
 
-                //noinspection unchecked
-                Collections.sort(newModList);
-            }
+            //noinspection unchecked
+            Collections.sort(newModList);
 
-            SwingUtilities.invokeLater(() -> {
-                modList.removeAll();
-                newModList.forEach(item -> modList.add(item.item));
-                modList.revalidate();
-            });
-
-            return null;
+            return newModList;
         }
 
         @Override
