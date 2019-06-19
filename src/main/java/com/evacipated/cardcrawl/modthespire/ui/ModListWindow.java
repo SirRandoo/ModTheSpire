@@ -734,14 +734,9 @@ public class ModListWindow extends JFrame implements WindowListener {
         if (Objects.isNull(lastPreset)) lastPreset = getDefaultPreset().toString();
 
         preset = new File(lastPreset);
+        presetTask = new PresetTask(preset.exists() ? preset : getDefaultPreset());
 
-        if (preset.exists()) {
-            presetTask = new PresetTask(preset);
-            presetTask.execute();
-        } else {
-            presetTask = new PresetTask(getDefaultPreset());
-            presetTask.execute();
-        }
+        presetTask.execute();
     }
 
     /**
