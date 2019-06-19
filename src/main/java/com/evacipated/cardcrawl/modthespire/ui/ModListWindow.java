@@ -905,6 +905,11 @@ public class ModListWindow extends JFrame implements WindowListener {
 
             return null;
         }
+
+        @Override
+        protected void done() {
+            setPreset(target);
+        }
     }
 
     /**
