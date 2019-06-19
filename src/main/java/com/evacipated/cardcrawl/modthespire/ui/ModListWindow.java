@@ -317,8 +317,6 @@ public class ModListWindow extends JFrame implements WindowListener {
 
         modList.setVisible(true);
 
-//        for (ModInfo mod : modInfos) modList.add(new ComplexListItem(mod.Name, null));
-
         listPanel.setLayout(new GridBagLayout());
         listPanel.setPreferredSize(new Dimension(30, 300));
 
