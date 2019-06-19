@@ -59,6 +59,7 @@ public class ModListWindow extends JFrame implements WindowListener {
 
     // Internals
     private File preset = null;
+    private DefaultListModel<ComplexListItem> listModel;
     private PresetTask presetTask = null;
     private boolean outJarRequested = false;
 
@@ -286,7 +287,8 @@ public class ModListWindow extends JFrame implements WindowListener {
         JPanel listPanel = new JPanel();
 
         // Create the mod view elements
-        modList = new ModListComponent();
+        listModel = new DefaultListModel<>();
+        modList = new ModListComponent(listModel);
         modView = new ModView();
         presetLabel = new JTextArea();
 
