@@ -39,6 +39,7 @@ import java.util.*;
  * such as a play button.
  */
 public class ModListWindow extends JFrame implements WindowListener {
+    private static final String defaultPreset = ConfigUtils.CONFIG_DIR + File.separator + "default.mts";
     private static Rectangle geometry = new Rectangle(0, 0, 800, 500);
     private ModInfo[] modInfos;
 
@@ -91,7 +92,7 @@ public class ModListWindow extends JFrame implements WindowListener {
         defaults.setProperty("launcher.geometry.width", Integer.toString(geometry.width));
         defaults.setProperty("launcher.geometry.height", Integer.toString(geometry.height));
         defaults.setProperty("launcher.maximized", Boolean.toString(false));
-        defaults.setProperty("launcher.presets.last", getDefaultPreset().toString());
+        defaults.setProperty("launcher.presets.last", defaultPreset);
 
         return defaults;
     }
@@ -101,8 +102,8 @@ public class ModListWindow extends JFrame implements WindowListener {
      * loader generated.  This method does not attempt
      * to resolve load order.
      */
-    private static File getDefaultPreset() {
-        File defaultPreset = new File(ConfigUtils.CONFIG_DIR + File.separator + "default.mts");
+    private File getDefaultPreset() {
+        File defaultPreset = new File(ModListWindow.defaultPreset);
 
         if (!defaultPreset.exists() && !Objects.isNull(Loader.MODINFOS)) {
             new Thread(() -> {
