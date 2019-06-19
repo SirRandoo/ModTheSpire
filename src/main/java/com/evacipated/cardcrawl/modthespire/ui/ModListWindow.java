@@ -105,7 +105,7 @@ public class ModListWindow extends JFrame implements WindowListener {
     private File getDefaultPreset() {
         File defaultPreset = new File(ModListWindow.defaultPreset);
 
-        if (!defaultPreset.exists() && !Objects.isNull(Loader.MODINFOS)) {
+        if (!defaultPreset.exists()) {
             new Thread(() -> {
                 try {
                     FileWriter fileWriter = new FileWriter(defaultPreset);
@@ -124,12 +124,6 @@ public class ModListWindow extends JFrame implements WindowListener {
                     System.out.println("Could not create default.mts file!  (" + e.toString() + ")");
                 }
             }).start();
-        } else {
-            if (!Objects.isNull(Loader.MODINFOS)) {
-                System.out.println("Mod infos: " + Arrays.toString(Loader.MODINFOS));
-            } else {
-                System.out.println("Mod info is null!");
-            }
         }
 
         return defaultPreset;
