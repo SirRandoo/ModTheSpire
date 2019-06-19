@@ -8,13 +8,13 @@ import java.awt.*;
 
 public class ComplexListItem extends JPanel {
     // Icons
-    public static final ImageIcon LOADING_ICON = new ImageIcon(Loader.class.getResource("assets/ajax-loader.gif"));
-    public static final ImageIcon DOWNLOAD_ICON = new ImageIcon(Loader.class.getResource("assets/download.gif"));
-    public static final ImageIcon ERROR_ICON = new ImageIcon(Loader.class.getResource("assets/error.gif"));
-    public static final ImageIcon CHECKMARK_ICON = new ImageIcon(Loader.class.getResource("assets/good.gif"));
-    public static final ImageIcon UPDATE_ICON = new ImageIcon(Loader.class.getResource("assets/update.gif"));
-    public static final ImageIcon WARNING_ICON = new ImageIcon(Loader.class.getResource("assets/warning.gif"));
-    public static final ImageIcon WORKSHOP_ICON = new ImageIcon(Loader.class.getResource("assets/workshop.gif"));
+    public static final ImageIcon LOADING_ICON = new ImageIcon(Loader.class.getResource("/assets/ajax-loader.gif"));
+    public static final ImageIcon DOWNLOAD_ICON = new ImageIcon(Loader.class.getResource("/assets/download.gif"));
+    public static final ImageIcon ERROR_ICON = new ImageIcon(Loader.class.getResource("/assets/error.gif"));
+    public static final ImageIcon CHECKMARK_ICON = new ImageIcon(Loader.class.getResource("/assets/good.gif"));
+    public static final ImageIcon UPDATE_ICON = new ImageIcon(Loader.class.getResource("/assets/update.gif"));
+    public static final ImageIcon WARNING_ICON = new ImageIcon(Loader.class.getResource("/assets/warning.gif"));
+    public static final ImageIcon WORKSHOP_ICON = new ImageIcon(Loader.class.getResource("/assets/workshop.gif"));
 
     private JCheckBox label;
     private JLabel sourceIcon;
