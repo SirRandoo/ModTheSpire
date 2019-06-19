@@ -306,6 +306,7 @@ public class ModListWindow extends JFrame implements WindowListener {
         modView.setBorder(new EmptyBorder(0, 10, 0, 0));
         modView.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         modView.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+        modView.setPreferredSize(new Dimension(70, 300));
 
         if (modInfos.length > 0) {
             ModInfo first = modInfos[0];
@@ -318,35 +319,43 @@ public class ModListWindow extends JFrame implements WindowListener {
             modView.setModVersion(first.ModVersion != null ? first.ModVersion.toString() : null);
         }
 
-        modList.setDragEnabled(true);
-        modList.setDropMode(DropMode.INSERT);
-        modList.setOpaque(true);
         modList.setVisible(true);
 
 //        for (ModInfo mod : modInfos) modList.add(new ComplexListItem(mod.Name, null));
 
-        listPanel.setBorder(new EmptyBorder(0, 0, 0, 0));
-        listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
-        listPanel.add(presetLabel);
-        listPanel.add(modList);
+        listPanel.setLayout(new GridBagLayout());
+        listPanel.setPreferredSize(new Dimension(30, 300));
+
+        GridBagConstraints listConstraints = new GridBagConstraints();
+        listConstraints.weightx = 1.0;
+        listConstraints.weighty = 0.1;
+        listConstraints.gridx = 0;
+        listConstraints.gridy = 0;
+        listConstraints.insets = new Insets(0, 0, 0, 0);
+        listConstraints.fill = GridBagConstraints.HORIZONTAL;
+
+        listPanel.add(presetLabel, listConstraints);
+
+        listConstraints.gridy = 1;
+        listConstraints.fill = GridBagConstraints.BOTH;
+        listConstraints.weighty = 1.0;
+        listPanel.add(modList, listConstraints);
 
         panel.setBorder(new EmptyBorder(15, 15, 15, 15));
         panel.setLayout(new GridBagLayout());
 
-        GridBagConstraints constraints = new GridBagConstraints();
-        constraints.weightx = 0.4;
-        constraints.weighty = 1.0;
-        constraints.gridx = 0;
-        constraints.gridy = 0;
-        constraints.insets = new Insets(0, 0, 0, 0);
-        constraints.fill = GridBagConstraints.VERTICAL;
+        GridBagConstraints layout = new GridBagConstraints();
+        layout.weighty = 1.0;
+        layout.weightx = 0.3;
+        layout.gridx = 0;
+        layout.insets = new Insets(0, 0, 0, 0);
+        layout.fill = GridBagConstraints.BOTH;
 
-        panel.add(listPanel, constraints);
+        panel.add(listPanel, layout);
 
-        constraints.gridx = 1;
-        constraints.weightx = 1.0;
-        constraints.fill = GridBagConstraints.BOTH;
-        panel.add(modView, constraints);
+        layout.weightx = 0.7;
+        layout.gridx = 1;
+        panel.add(modView, layout);
 
         return panel;
     }
