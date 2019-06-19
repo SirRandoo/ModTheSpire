@@ -292,7 +292,6 @@ public class ModListWindow extends JFrame implements WindowListener {
         modView = new ModView();
         presetLabel = new JTextArea();
 
-        presetLabel.setText("Preset: default");
         presetLabel.setWrapStyleWord(true);
         presetLabel.setLineWrap(true);
         presetLabel.setEditable(false);
