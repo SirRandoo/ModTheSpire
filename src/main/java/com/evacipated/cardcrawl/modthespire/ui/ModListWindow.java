@@ -897,11 +897,11 @@ public class ModListWindow extends JFrame implements WindowListener {
                 Collections.sort(newModList);
             }
 
-            modList.removeAll();
-
-            for (PresetItem presetItem : newModList) {
-                modList.add(presetItem.item);
-            }
+            SwingUtilities.invokeLater(() -> {
+                modList.removeAll();
+                newModList.forEach(item -> modList.add(item.item));
+                modList.revalidate();
+            });
 
             return null;
         }
