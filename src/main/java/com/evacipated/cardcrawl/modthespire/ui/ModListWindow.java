@@ -21,7 +21,11 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Objects;
+import java.util.Properties;
+import java.util.concurrent.ExecutionException;
 
 /**
  * The main launcher window.
@@ -572,7 +576,7 @@ public class ModListWindow extends JFrame implements WindowListener {
         if (result == JFileChooser.APPROVE_OPTION) {
             File preset = fileChooser.getSelectedFile();
 
-            setPreset(preset);
+            // Load the user's selected preset.
             presetTask = new PresetTask(preset);
             presetTask.execute();
         }
@@ -876,13 +880,14 @@ public class ModListWindow extends JFrame implements WindowListener {
                 if (modPositionRaw != null) modPosition = Integer.parseInt(modPositionRaw);
                 if (modEnabledRaw != null) modEnabled = Boolean.parseBoolean(modEnabledRaw);
 
-                ComplexListItem item = new ComplexListItem();
+                PresetItem presetItem = new PresetItem(
+                    Objects.isNull(modInfo.Name) ? modInfo.ID : modInfo.Name,
+                    modEnabled,
+                    modPosition == -1 ? 500 + newModList.size() : modPosition
+                );
 
-                item.setText(Objects.isNull(modInfo.Name) ? modInfo.ID : modInfo.Name);
-                item.setCheckState(modEnabled);
-
-                PresetItem presetItem = new PresetItem(item, modPosition == -1 ? 500 + newModList.size() : modPosition);
                 newModList.add(presetItem);
+            }
 
             //noinspection unchecked
             Collections.sort(newModList);
@@ -892,7 +897,27 @@ public class ModListWindow extends JFrame implements WindowListener {
 
         @Override
         protected void done() {
+            // Update the preset label to reflect the loaded preset.
             setPreset(target);
+
+            try {
+                // Get the new mod list returned from doInBackground.
+                ArrayList<PresetItem> newModList = get();
+
+                // Remove any list items in the mod list
+                listModel.removeAllElements();
+
+                // Add the new items
+                for (PresetItem item : newModList) {
+                    ComplexListItem component = new ComplexListItem(item.name, null);
+                    component.setCheckState(item.enabled);
+
+                    listModel.addElement(component);
+                }
+
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -900,11 +925,13 @@ public class ModListWindow extends JFrame implements WindowListener {
      * A utility class for housing comparable mod items.
      */
     private class PresetItem implements Comparable {
-        private ComplexListItem item;
+        private String name;
+        private boolean enabled;
         private int position;
 
-        PresetItem(ComplexListItem item, int position) {
-            this.item = item;
+        PresetItem(String name, boolean enabled, int position) {
+            this.name = name;
+            this.enabled = enabled;
             this.position = position;
         }
 
