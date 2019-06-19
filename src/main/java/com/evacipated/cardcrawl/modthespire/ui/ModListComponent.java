@@ -14,11 +14,14 @@ import java.util.stream.IntStream;
 public class ModListComponent extends JList<ComplexListItem> {
     private final HashMap<String, ComplexListItem> mods = new HashMap<>();
 
-    public ModListComponent() {
+    public ModListComponent(ListModel<ComplexListItem> model) {
+        super(model);
+
         setDragEnabled(true);
         setDropMode(DropMode.INSERT);
         setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         setTransferHandler(new ListItemTransferHandler());
+        setCellRenderer(new CellRenderer());
     }
 
     /**
