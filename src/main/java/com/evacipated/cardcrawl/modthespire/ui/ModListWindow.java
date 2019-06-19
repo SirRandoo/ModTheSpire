@@ -101,7 +101,7 @@ public class ModListWindow extends JFrame implements WindowListener {
      * loader generated.  This method does not attempt
      * to resolve load order.
      */
-    public static File getDefaultPreset() {
+    private static File getDefaultPreset() {
         File defaultPreset = new File(ConfigUtils.CONFIG_DIR + File.separator + "default.mts");
 
         if (!defaultPreset.exists() && !Objects.isNull(Loader.MODINFOS)) {
@@ -140,7 +140,7 @@ public class ModListWindow extends JFrame implements WindowListener {
      * mod's current state and position to a Properties
      * object to use for saving.
      */
-    public Properties generatePresetProperties() {
+    private Properties generatePresetProperties() {
         Properties properties = new Properties();
 
         for (int index = 0; index < modList.getModel().getSize(); index++) {
