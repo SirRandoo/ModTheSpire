@@ -576,7 +576,31 @@ public class ModListWindow extends JFrame implements WindowListener {
         // Launch Slay the Spire.
         Thread t = new Thread(() -> {
             // Only load the user's selected mods.
-            File[] selectedMods = {};
+            int size = 0;
+
+            for (int i = 0; i < listModel.getSize(); i++) {
+                if (listModel.getElementAt(i).getCheckState()) {
+                    size++;
+                }
+            }
+
+            File[] selectedMods = new File[size];
+
+            for (int index = 0; index < listModel.getSize(); index++) {
+                ComplexListItem item = listModel.getElementAt(index);
+
+                for (ModInfo modInfo : modInfos) {
+                    if (Objects.isNull(modInfo.ID)) continue;
+
+                    if (item.getText().equalsIgnoreCase(Objects.isNull(modInfo.Name) ? modInfo.ID : modInfo.Name)) {
+                        try {
+                            selectedMods[index] = new File(modInfo.jarURL.toURI());
+                        } catch (URISyntaxException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
 
             Loader.runMods(selectedMods);
         });
