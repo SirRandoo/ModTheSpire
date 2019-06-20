@@ -48,9 +48,11 @@ public class ModListWindow extends JFrame implements WindowListener {
     private ModInfo[] modInfos;
     // Top-down UI elements.
     private JMenuBar menuBar;
+    private JTextArea presetLabel;
     private ModListComponent modList;
     private ModView modView;
-    private JTextArea presetLabel;
+    private JButton enableAll;
+    private JButton disableAll;
     private AugmentedStatusBar statusBar;
     // Dialogs
     private SettingsWindow settingsWindow;
@@ -139,8 +141,8 @@ public class ModListWindow extends JFrame implements WindowListener {
     private Properties generatePresetProperties() {
         Properties properties = new Properties();
 
-        for (int index = 0; index < modList.getModel().getSize(); index++) {
-            ComplexListItem item = modList.getModel().getElementAt(index);
+        for (int index = 0; index < listModel.getSize(); index++) {
+            ComplexListItem item = listModel.getElementAt(index);
 
             for (ModInfo modInfo : modInfos) {
                 if (Objects.isNull(modInfo.ID)) continue;
@@ -291,6 +293,24 @@ public class ModListWindow extends JFrame implements WindowListener {
         modList = new ModListComponent(listModel);
         modView = new ModView();
         presetLabel = new JTextArea();
+        enableAll = new JButton("Enable All");
+        disableAll = new JButton("Disable All");
+
+        enableAll.addActionListener((ActionEvent event) -> {
+            for (int index = 0; index < listModel.getSize(); index++) {
+                listModel.elementAt(index).setCheckState(true);
+            }
+
+            modList.repaint();
+        });
+
+        disableAll.addActionListener((ActionEvent event) -> {
+            for (int index = 0; index < listModel.getSize(); index++) {
+                listModel.getElementAt(index).setCheckState(false);
+            }
+
+            modList.repaint();
+        });
 
         presetLabel.setWrapStyleWord(true);
         presetLabel.setLineWrap(true);
@@ -326,14 +346,24 @@ public class ModListWindow extends JFrame implements WindowListener {
         listConstraints.gridx = 0;
         listConstraints.gridy = 0;
         listConstraints.insets = new Insets(0, 0, 0, 0);
+        listConstraints.gridwidth = 2;
         listConstraints.fill = GridBagConstraints.HORIZONTAL;
 
         listPanel.add(presetLabel, listConstraints);
 
-        listConstraints.gridy = 1;
+        listConstraints.gridy++;
         listConstraints.fill = GridBagConstraints.BOTH;
-        listConstraints.weighty = 1.0;
+        listConstraints.weighty = 0.8;
         listPanel.add(modList, listConstraints);
+
+        listConstraints.gridy++;
+        listConstraints.gridwidth = 1;
+        listConstraints.weighty = 0.1;
+        listConstraints.fill = GridBagConstraints.HORIZONTAL;
+        listPanel.add(enableAll, listConstraints);
+
+        listConstraints.gridx++;
+        listPanel.add(disableAll, listConstraints);
 
         panel.setBorder(new EmptyBorder(15, 15, 15, 15));
         panel.setLayout(new GridBagLayout());
