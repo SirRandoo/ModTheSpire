@@ -171,6 +171,11 @@ public class Loader
             }
         }
 
+        EventQueue.invokeLater(() -> {
+            ex = new ModListWindow();
+            ex.setVisible(true);
+        });
+
         List<SteamSearch.WorkshopInfo> workshopInfos = new ArrayList<>();
         try {
             System.out.println("Searching for Workshop items...");
@@ -265,23 +270,23 @@ public class Loader
             e.printStackTrace();
         }
 
-        findGameVersion();
+//        findGameVersion();
 
-        EventQueue.invokeLater(() -> {
-            ModInfo[] modInfos = getAllMods(workshopInfos);
-            ex = new ModListWindow(modInfos);
-            ex.setVisible(true);
-
-//            ex.warnAboutMissingVersions();
-
-            String java_version = System.getProperty("java.version");
-            if (!java_version.startsWith("1.8")) {
-                String msg = "ModTheSpire requires Java version 8 to run properly.\nYou are currently using Java " + java_version;
-                JOptionPane.showMessageDialog(null, msg, "Warning", JOptionPane.WARNING_MESSAGE);
-            }
-
-//            ex.startCheckingForMTSUpdate();
-        });
+//        EventQueue.invokeLater(() -> {
+//            ModInfo[] modInfos = getAllMods(workshopInfos);
+//            ex = new ModListWindow(modInfos);
+//            ex.setVisible(true);
+//
+////            ex.warnAboutMissingVersions();
+//
+//            String java_version = System.getProperty("java.version");
+//            if (!java_version.startsWith("1.8")) {
+//                String msg = "ModTheSpire requires Java version 8 to run properly.\nYou are currently using Java " + java_version;
+//                JOptionPane.showMessageDialog(null, msg, "Warning", JOptionPane.WARNING_MESSAGE);
+//            }
+//
+////            ex.startCheckingForMTSUpdate();
+//        });
     }
 
     public static void closeWindow()
