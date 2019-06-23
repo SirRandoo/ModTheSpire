@@ -572,7 +572,7 @@ public class ModListWindow extends JFrame implements WindowListener {
             int result = JOptionPane.showConfirmDialog(
                 this,
                 "You're running the beta version of Slay the Spire, but your settings don't allow ModTheSpire to run on the beta version.  <b>Some mods may not work correctly.<b><br/><br/>Do you want ModTheSpire to run anyway?",
-                this.getTitle(),
+                this.getTitle() + " - Beta Confirmation",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.PLAIN_MESSAGE
             );
@@ -799,6 +799,15 @@ public class ModListWindow extends JFrame implements WindowListener {
             modView.setDescription(info.Description);
             modView.setAuthors(info.Authors);
         }
+    }
+
+    public void showStatusMessage(String message) {
+        showStatusMessage(message, 5);
+    }
+
+    public void showStatusMessage(String message, int duration) {
+        if (Loader.DEBUG) System.out.println("Status bar > " + message);
+        statusBar.showMessage(message, duration);
     }
 
     /**
