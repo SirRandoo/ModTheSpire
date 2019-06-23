@@ -62,7 +62,7 @@ public class ModListWindow extends JFrame implements WindowListener {
     // Internals
     private File preset = null;
     private DefaultListModel<ComplexListItem> listModel;
-    private PresetTask presetTask = null;
+    private PresetLoadTask presetLoadTask = null;
     private boolean outJarRequested = false;
 
 
@@ -625,8 +625,8 @@ public class ModListWindow extends JFrame implements WindowListener {
             File preset = fileChooser.getSelectedFile();
 
             // Load the user's selected preset.
-            presetTask = new PresetTask(preset);
-            presetTask.execute();
+            presetLoadTask = new PresetLoadTask(preset);
+            presetLoadTask.execute();
         }
     }
 
@@ -786,9 +786,9 @@ public class ModListWindow extends JFrame implements WindowListener {
         if (Objects.isNull(lastPreset)) lastPreset = getDefaultPreset().toString();
 
         preset = new File(lastPreset);
-        presetTask = new PresetTask(preset.exists() ? preset : getDefaultPreset());
+        presetLoadTask = new PresetLoadTask(preset.exists() ? preset : getDefaultPreset());
 
-        presetTask.execute();
+        presetLoadTask.execute();
     }
 
     /**
@@ -882,65 +882,78 @@ public class ModListWindow extends JFrame implements WindowListener {
     }
 
     /**
-     * A background presetTask for updating the display to reflect the
-     * end-user's selected preset.
+     * A background task for loading the end-user's requested preset.
+     * When the preset is loaded, the launcher's display will be updated
+     * to reflect the changes.
      */
-    private class PresetTask extends SwingWorker<ArrayList<PresetItem>, Void> {
+    private class PresetLoadTask extends SwingWorker<ArrayList<PresetItem>, Void> {
         private File target;
 
-        PresetTask(File target) {
+        PresetLoadTask(File target) {
             this.target = target;
         }
 
         /**
-         * Opens the end-user's requested preset, and updates the
-         * mod list to reflect the preset's values.
+         * Opens the end-user's requested preset, sorts the preset's
+         * mods according to their saved order, and appends the any
+         * new mods that may have been added.
+         *
+         * @throws PresetLoadException The preset could not be loaded.
+         * @throws IOException         The file does not exist, or cannot
+         *                             be read from.
          */
         @Override
-        protected ArrayList<PresetItem> doInBackground() throws Exception {
+        protected ArrayList<PresetItem> doInBackground() throws PresetLoadException, IOException {
             // If the target is null for some reason, throw an IOException.
             if (Objects.isNull(target)) throw new IOException("Preset file cannot be null!");
 
             // Some declarations
-            FileReader fileReader = new FileReader(target);
-            Properties preset = new Properties();
-            ArrayList<PresetItem> newModList = new ArrayList<>();
 
-            // Load the preset properties.
-            preset.load(fileReader);
+            try (FileReader fileReader = new FileReader(target)) {
+                Properties preset = new Properties();
+                ArrayList<PresetItem> newModList = new ArrayList<>();
 
-            // Sort the mod list.
-            for (ModInfo modInfo : modInfos) {
-                // If a mod doesn't have an ID, the mod will be omitted.
-                // Omitted mods won't be displayed.
-                if (Objects.isNull(modInfo.ID)) {
-                    System.out.println("Mod @ " + modInfo.jarURL.toString() + " has a null ID!");
-                    continue;
+                // Load the preset properties.
+                preset.load(fileReader);
+
+                // Sort the mod list.
+                for (ModInfo modInfo : modInfos) {
+                    // If a mod doesn't have an ID, the mod will be omitted.
+                    // Omitted mods won't be displayed.
+                    if (Objects.isNull(modInfo.ID)) {
+                        System.out.println("Mod @ " + modInfo.jarURL.toString() + " has a null ID!");
+                        continue;
+                    }
+
+                    String modPositionRaw = preset.getProperty(modInfo.ID + ".position");
+                    String modEnabledRaw = preset.getProperty(modInfo.ID + ".enabled");
+
+                    int modPosition = -1;
+                    boolean modEnabled = false;
+
+                    // Cast the raw values
+                    if (modPositionRaw != null) modPosition = Integer.parseInt(modPositionRaw);
+                    if (modEnabledRaw != null) modEnabled = Boolean.parseBoolean(modEnabledRaw);
+
+                    PresetItem presetItem = new PresetItem(
+                        Objects.isNull(modInfo.Name) ? modInfo.ID : modInfo.Name,
+                        modEnabled,
+                        modPosition == -1 ? 500 + newModList.size() : modPosition
+                    );
+
+                    newModList.add(presetItem);
                 }
 
-                String modPositionRaw = preset.getProperty(modInfo.ID + ".position");
-                String modEnabledRaw = preset.getProperty(modInfo.ID + ".enabled");
+                //noinspection unchecked
+                Collections.sort(newModList);
 
-                int modPosition = -1;
-                boolean modEnabled = false;
+                return newModList;
 
-                // Cast the raw values
-                if (modPositionRaw != null) modPosition = Integer.parseInt(modPositionRaw);
-                if (modEnabledRaw != null) modEnabled = Boolean.parseBoolean(modEnabledRaw);
-
-                PresetItem presetItem = new PresetItem(
-                    Objects.isNull(modInfo.Name) ? modInfo.ID : modInfo.Name,
-                    modEnabled,
-                    modPosition == -1 ? 500 + newModList.size() : modPosition
-                );
-
-                newModList.add(presetItem);
+            } catch (IOException e) {
+                e.printStackTrace();
             }
 
-            //noinspection unchecked
-            Collections.sort(newModList);
-
-            return newModList;
+            throw new PresetLoadException();
         }
 
         @Override
@@ -964,6 +977,7 @@ public class ModListWindow extends JFrame implements WindowListener {
                 }
 
             } catch (InterruptedException | ExecutionException e) {
+                statusBar.showMessage("Could not load preset \"" + target.getName().substring(0, target.getName().lastIndexOf('.')) + "\"");
                 e.printStackTrace();
             }
         }
@@ -990,7 +1004,7 @@ public class ModListWindow extends JFrame implements WindowListener {
     }
 
     /**
-     * Saves a file (hopefully) away from the Swing threads.
+     * Saves a file away from the Swing threads.
      */
     private class SaveFileTask extends SwingWorker<Void, Void> {
         private File target;
@@ -1011,14 +1025,14 @@ public class ModListWindow extends JFrame implements WindowListener {
         @Override
         protected Void doInBackground() throws Exception {
             if (!Objects.isNull(data)) {
-                FileWriter fileWriter = new FileWriter(target);
+                try (FileWriter fileWriter = new FileWriter(target)) {
+                    if (data instanceof Properties) {
+                        ((Properties) data).store(fileWriter, "");
+                    }
 
-                if (!Objects.isNull(data) && data instanceof Properties) {
-                    ((Properties) data).store(fileWriter, "");
+                    // Explicitly flush the writer
+                    fileWriter.flush();
                 }
-
-                fileWriter.flush();
-                fileWriter.close();
             }
 
             return null;
