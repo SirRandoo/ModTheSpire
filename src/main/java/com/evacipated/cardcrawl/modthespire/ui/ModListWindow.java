@@ -62,7 +62,6 @@ public class ModListWindow extends JFrame implements WindowListener {
     // Internals
     private File preset = null;
     private DefaultListModel<ComplexListItem> listModel;
-    private PresetLoadTask presetLoadTask = null;
     private boolean outJarRequested = false;
 
 
@@ -627,8 +626,11 @@ public class ModListWindow extends JFrame implements WindowListener {
             File preset = fileChooser.getSelectedFile();
 
             // Load the user's selected preset.
-            presetLoadTask = new PresetLoadTask(preset);
-            presetLoadTask.execute();
+            try {
+                (new PresetLoadTask(preset)).execute();
+            } catch (IOException e) {
+                System.out.println("Could not load preset @ " + preset.toString());
+            }
         }
     }
 
@@ -641,9 +643,7 @@ public class ModListWindow extends JFrame implements WindowListener {
      * will save the preset data to it.
      */
     private void savePreset() {
-        new SaveFileTask(preset, generatePresetProperties()).execute();
-
-        statusBar.showMessage("Preset saved!");  // TODO: Determine if this is accurate
+        new PresetSaveTask(preset, generatePresetProperties()).execute();
     }
 
     /**
@@ -788,9 +788,12 @@ public class ModListWindow extends JFrame implements WindowListener {
         if (Objects.isNull(lastPreset)) lastPreset = getDefaultPreset().toString();
 
         preset = new File(lastPreset);
-        presetLoadTask = new PresetLoadTask(preset.exists() ? preset : getDefaultPreset());
 
-        presetLoadTask.execute();
+        try {
+            (new PresetLoadTask(preset.exists() ? preset : getDefaultPreset())).execute();
+        } catch (IOException e1) {
+            System.out.println("Could not load last known preset!  This should never happen.");
+        }
     }
 
     /**
@@ -891,7 +894,9 @@ public class ModListWindow extends JFrame implements WindowListener {
     private class PresetLoadTask extends SwingWorker<ArrayList<PresetItem>, Void> {
         private File target;
 
-        PresetLoadTask(File target) {
+        PresetLoadTask(File target) throws IOException {
+            if (!target.exists()) throw new IOException();
+
             this.target = target;
         }
 
@@ -901,17 +906,11 @@ public class ModListWindow extends JFrame implements WindowListener {
          * new mods that may have been added.
          *
          * @throws PresetLoadException The preset could not be loaded.
-         * @throws IOException         The file does not exist, or cannot
-         *                             be read from.
          */
         @Override
-        protected ArrayList<PresetItem> doInBackground() throws PresetLoadException, IOException {
-            // If the target is null for some reason, throw an IOException.
-            if (Objects.isNull(target)) throw new IOException("Preset file cannot be null!");
-
-            // Some declarations
-
+        protected ArrayList<PresetItem> doInBackground() throws PresetLoadException {
             try (FileReader fileReader = new FileReader(target)) {
+                // Some declarations
                 Properties preset = new Properties();
                 ArrayList<PresetItem> newModList = new ArrayList<>();
 
@@ -993,6 +992,42 @@ public class ModListWindow extends JFrame implements WindowListener {
     }
 
     /**
+     * A background task for saving the end-user's current preset.
+     * When the preset is saved, the launcher's status bar will be updated
+     * to ensure the user knows its been saved.
+     */
+    private class PresetSaveTask extends SwingWorker<Void, Void> {
+        private File target;
+        private Properties data;
+
+        PresetSaveTask(File target, Properties data) {
+            this.target = target;
+            this.data = data;
+        }
+
+        /**
+         * Saves the end-user's current preset.
+         *
+         * @throws IOException The file could not be written to.
+         */
+        @Override
+        protected Void doInBackground() throws IOException {
+            try (FileWriter fileWriter = new FileWriter(target)) {
+                data.store(fileWriter, "ModTheSpire preset");
+
+                fileWriter.flush();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void done() {
+            statusBar.showMessage("Saved preset \"" + target.getName().substring(0, target.getName().lastIndexOf('.')) + "\"");
+        }
+    }
+
+    /**
      * A utility class for housing comparable mod items.
      */
     private class PresetItem implements Comparable {
@@ -1009,42 +1044,6 @@ public class ModListWindow extends JFrame implements WindowListener {
         @Override
         public int compareTo(Object o) {
             return Integer.compare(this.position, ((PresetItem) o).position);
-        }
-    }
-
-    /**
-     * Saves a file away from the Swing threads.
-     */
-    private class SaveFileTask extends SwingWorker<Void, Void> {
-        private File target;
-        private Object data;
-
-        SaveFileTask(File target, Object data) {
-            this.target = target;
-            this.data = data;
-        }
-
-        /**
-         * Saves the data to the requested file location.
-         *
-         * @throws IOException The file could not be saved for
-         *                     some reason, such as a permission
-         *                     error.
-         */
-        @Override
-        protected Void doInBackground() throws Exception {
-            if (!Objects.isNull(data)) {
-                try (FileWriter fileWriter = new FileWriter(target)) {
-                    if (data instanceof Properties) {
-                        ((Properties) data).store(fileWriter, "");
-                    }
-
-                    // Explicitly flush the writer
-                    fileWriter.flush();
-                }
-            }
-
-            return null;
         }
     }
 }
