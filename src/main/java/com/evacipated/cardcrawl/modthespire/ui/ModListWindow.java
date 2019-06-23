@@ -978,6 +978,13 @@ public class ModListWindow extends JFrame implements WindowListener {
                     listModel.addElement(component);
                 }
 
+                if (Loader.MTS_CONFIG.has("launcher.presets.bypass")) {
+                    if (Loader.MTS_CONFIG.getBool("launcher.presets.bypass")) {
+                        System.out.println("Automatically starting Slay the Spire with preset \"" + preset.getName().substring(0, preset.getName().lastIndexOf('.')) + "\"");
+                        startStS();
+                    }
+                }
+
             } catch (InterruptedException | ExecutionException e) {
                 statusBar.showMessage("Could not load preset \"" + target.getName().substring(0, target.getName().lastIndexOf('.')) + "\"");
                 e.printStackTrace();
