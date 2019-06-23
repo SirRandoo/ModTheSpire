@@ -63,6 +63,7 @@ public class ModListWindow extends JFrame implements WindowListener {
     private File preset = null;
     private DefaultListModel<ComplexListItem> listModel;
     private boolean outJarRequested = false;
+    private boolean shouldBypass = true;
 
 
     public ModListWindow(ModInfo[] modInfos) {
@@ -977,8 +978,13 @@ public class ModListWindow extends JFrame implements WindowListener {
                     listModel.addElement(component);
                 }
 
+                // If the user has enabled the launcher bypass option,
+                // we'll start Slay the Spire.  This will ONLY start
+                // the game if this is the FIRST preset loaded.
                 if (Loader.MTS_CONFIG.has("launcher.presets.bypass")) {
-                    if (Loader.MTS_CONFIG.getBool("launcher.presets.bypass")) {
+                    if (Loader.MTS_CONFIG.getBool("launcher.presets.bypass") && shouldBypass) {
+                        shouldBypass = false;
+
                         System.out.println("Automatically starting Slay the Spire with preset \"" + preset.getName().substring(0, preset.getName().lastIndexOf('.')) + "\"");
                         startStS();
                     }
