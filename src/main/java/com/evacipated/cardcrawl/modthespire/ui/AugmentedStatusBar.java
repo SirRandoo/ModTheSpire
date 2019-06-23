@@ -97,7 +97,7 @@ public class AugmentedStatusBar extends JPanel {
         progressBar.setMaximumSize(new Dimension(250, 20));
         progressBar.setVisible(false);
 
-        timer = new Timer(0, (ActionEvent event) -> message.setText(""));
+        timer = new Timer(0, (ActionEvent event) -> clearMessage());
         timer.setRepeats(false);
 
         setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
@@ -192,6 +192,13 @@ public class AugmentedStatusBar extends JPanel {
     }
 
     /**
+     * Returns the status bar's progress bar's current value.
+     */
+    public int getProgressValue() {
+        return progressBar.getValue();
+    }
+
+    /**
      * Shows a message on the status bar.
      *
      * @param message The message to display.
@@ -213,10 +220,27 @@ public class AugmentedStatusBar extends JPanel {
      * <p>
      * This implementation defaults to 5 seconds.
      *
-     * @param message The number of seconds to display
-     *                the message for.
+     * @param message The message to display.
      */
     public void showMessage(String message) {
         showMessage(message, 5);
+    }
+
+    /**
+     * Sets a message on the status bar.
+     * <p>
+     * This method does not remove the message
+     *
+     * @param message The message to display.
+     */
+    public void setMessage(String message) {
+        this.message.setText(message);
+    }
+
+    /**
+     * Clears a message on the status bar.
+     */
+    public void clearMessage() {
+        this.message.setText("");
     }
 }
