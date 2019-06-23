@@ -4,9 +4,19 @@
 
 package com.evacipated.cardcrawl.modthespire.ui;
 
+import com.evacipated.cardcrawl.modthespire.GameBetaFinder;
+import com.evacipated.cardcrawl.modthespire.GameVersionFinder;
 import com.evacipated.cardcrawl.modthespire.Loader;
 import com.evacipated.cardcrawl.modthespire.ModInfo;
 import com.evacipated.cardcrawl.modthespire.lib.ConfigUtils;
+import com.evacipated.cardcrawl.modthespire.lib.SpireConfig;
+import com.evacipated.cardcrawl.modthespire.steam.SteamSearch;
+import com.evacipated.cardcrawl.modthespire.steam.SteamWorkshop;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.reflect.TypeToken;
+import org.objectweb.asm.ClassReader;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -15,16 +25,12 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Objects;
-import java.util.Properties;
+import java.io.*;
+import java.net.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -45,7 +51,7 @@ import java.util.concurrent.ExecutionException;
 public class ModListWindow extends JFrame implements WindowListener {
     private static final String defaultPreset = ConfigUtils.CONFIG_DIR + File.separator + "default.mts";
     private static Rectangle geometry = new Rectangle(0, 0, 800, 500);
-    private ModInfo[] modInfos;
+    private List<ModInfo> modInfos = new ArrayList<>();
     // Top-down UI elements.
     private JMenuBar menuBar;
     private JTextArea presetLabel;
@@ -66,8 +72,7 @@ public class ModListWindow extends JFrame implements WindowListener {
     private boolean shouldBypass = true;
 
 
-    public ModListWindow(ModInfo[] modInfos) {
-        this.modInfos = modInfos;
+    public ModListWindow() {
         addWindowListener(this);
 
         SwingUtilities.invokeLater(() -> {
@@ -326,8 +331,8 @@ public class ModListWindow extends JFrame implements WindowListener {
         modView.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
         modView.setPreferredSize(new Dimension(70, 300));
 
-        if (modInfos.length > 0) {
-            ModInfo first = modInfos[0];
+        if (modInfos.size() > 0) {
+            ModInfo first = modInfos.get(0);
 
             modView.setModName(first.ID, first.Name);
             modView.setDependencies(first.Dependencies);
@@ -575,7 +580,26 @@ public class ModListWindow extends JFrame implements WindowListener {
             if (result != JOptionPane.YES_OPTION) return;
         }
 
-        // Launch Slay the Spire.
+        // Launch Slay the Spire with the user's selected mods.
+//        int size = (int) IntStream.range(0, listModel.getSize()).filter(i -> listModel.getElementAt(i).getCheckState()).count();
+//        File[] selectedMods = new File[size];
+//
+//        for (int i = 0; i < listModel.getSize(); i++) {
+//            ComplexListItem item = listModel.getElementAt(i);
+//
+//            for (ModInfo modInfo : modInfos) {
+//                if (Objects.isNull(modInfo.ID)) continue;
+//
+//                if (item.getText().equalsIgnoreCase(Objects.isNull(modInfo.Name) ? modInfo.ID : modInfo.Name)) {
+//                    try {
+//                        selectedMods[i] = new File(modInfo.jarURL.toURI());
+//                    } catch (URISyntaxException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+//            }
+//        }
+
         Thread t = new Thread(() -> {
             // Only load the user's selected mods.
             int size = 0;
@@ -780,21 +804,31 @@ public class ModListWindow extends JFrame implements WindowListener {
     /**
      * Invoked the first time the launcher window is made visible.
      * <p>
-     * This override is responsible for loading the user's last known preset.
+     * This override is responsible for invoking the mod discovery process,
+     * then loading the last known preset.
      */
     @Override
     public void windowOpened(WindowEvent e) {
-        String lastPreset = Loader.MTS_CONFIG.getString("launcher.presets.last");
+        // Start the mod discovery
+        ModDiscoveryTask discoveryTask = new ModDiscoveryTask();
 
-        if (Objects.isNull(lastPreset)) lastPreset = getDefaultPreset().toString();
+        discoveryTask.addPropertyChangeListener(evt -> {
+            if (evt.getPropertyName().equalsIgnoreCase("state") && evt.getNewValue() == SwingWorker.StateValue.DONE) {
+                String lastPreset = Loader.MTS_CONFIG.getString("launcher.presets.last");
 
-        preset = new File(lastPreset);
+                if (Objects.isNull(lastPreset)) lastPreset = getDefaultPreset().toString();
 
-        try {
-            (new PresetLoadTask(preset.exists() ? preset : getDefaultPreset())).execute();
-        } catch (IOException e1) {
-            System.out.println("Could not load last known preset!  This should never happen.");
-        }
+                preset = new File(lastPreset);
+
+                try {
+                    (new PresetLoadTask(preset.exists() ? preset : getDefaultPreset())).execute();
+                } catch (IOException e1) {
+                    System.out.println("Could not load last known preset!  This should never happen.");
+                }
+            }
+        });
+
+        discoveryTask.execute();
     }
 
     /**
@@ -958,6 +992,12 @@ public class ModListWindow extends JFrame implements WindowListener {
             throw new PresetLoadException();
         }
 
+        /**
+         * Updates the launcher's mod list to reflect the loaded preset.
+         * <p>
+         * If this is the first preset loaded and the user enabled bypass,
+         * the launcher will automatically start Slay the Spire.
+         */
         @Override
         protected void done() {
             // Update the preset label to reflect the loaded preset.
@@ -1027,6 +1067,11 @@ public class ModListWindow extends JFrame implements WindowListener {
             return null;
         }
 
+        /**
+         * When the preset is finished saving, this method
+         * is responsible for informing the user that their
+         * changes were recorded to disk.
+         */
         @Override
         protected void done() {
             statusBar.showMessage("Saved preset \"" + target.getName().substring(0, target.getName().lastIndexOf('.')) + "\"");
@@ -1050,6 +1095,356 @@ public class ModListWindow extends JFrame implements WindowListener {
         @Override
         public int compareTo(Object o) {
             return Integer.compare(this.position, ((PresetItem) o).position);
+        }
+    }
+
+    /**
+     * A background task for starting, and logging output from Slay the Spire
+     */
+    private class SpireLaunchTask extends SwingWorker<Void, String> {
+        private ProcessBuilder processBuilder;
+        private boolean cullProcess = false;
+        private Process process;
+
+        SpireLaunchTask(String[] arguments) {
+            this.processBuilder = new ProcessBuilder(arguments);
+
+            process = null;
+            processBuilder.redirectErrorStream(true);
+        }
+
+        @Override
+        protected Void doInBackground() throws SecurityException, IOException {
+            // Start Slay the Spire if it hasn't been started previously.
+            // Once the start method returns, we'll "replace" the launcher
+            // for the console.
+            if (Objects.isNull(process)) {
+                process = processBuilder.start();
+                SwingUtilities.invokeLater(() -> setVisible(false));
+                // TODO: Set console visible here
+            }
+
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                do {
+                    String line = reader.readLine();
+
+                    if (line != null) publish(line);
+                } while (!cullProcess && process.isAlive());
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void process(List<String> chunks) {
+            for (String chunk : chunks) {
+                // TODO: Append the output to the console window.
+            }
+        }
+
+        @Override
+        protected void done() {
+            setVisible(true);
+        }
+
+        public void terminate() {
+            cullProcess = true;
+        }
+    }
+
+    /**
+     * A background task for discovering mods for ModTheSpire.
+     * <p>
+     * This class migrates functionality from the loader to the
+     * launcher to provide a more ui-centric foundation.
+     */
+    private class ModDiscoveryTask extends SwingWorker<List<ModInfo>, Void> {
+        private List<SteamSearch.WorkshopInfo> workshopInfos = new ArrayList<>();
+
+        /**
+         * Finds and loads any mods for Slay the Spire, while providing
+         * feedback to the end-user about what's happening.
+         *
+         * @return The discovered mod list.
+         * @throws Exception Some arcane error happened.
+         */
+        @Override
+        protected List<ModInfo> doInBackground() throws Exception {
+            // Inform the end-user that the launcher is currently looking for
+            // workshop mods.
+            SwingUtilities.invokeLater(() -> {
+                statusBar.setMessage("Searching for workshop mods...");
+                statusBar.setProgressBarVisible(true);
+                statusBar.setProgressIndeterminate(true);
+            });
+
+            // Look for workshop mods.
+            workshopInfos = findWorkshopMods();
+
+            // Inform the end-user that the launcher found X amount of mods.
+            SwingUtilities.invokeLater(() -> statusBar.setMessage("Found " + workshopInfos.size() + " mods!"));
+
+            // Save the workshop timestamps
+            saveWorkshopTimestamps();
+
+            // Inform the end-user that the launcher is trying to find the
+            // current version of Slay the Spire.
+            SwingUtilities.invokeLater(() -> statusBar.setMessage("Finding game version..."));
+            findGameVersion();
+            SwingUtilities.invokeLater(() -> statusBar.setMessage("Running version " + Loader.STS_VERSION));
+
+            // Load the workshop mod's info.
+            List<ModInfo> modInfos = new ArrayList<>();
+            File[] modFolderFiles;
+            modFolderFiles = new File(Loader.MOD_DIR).listFiles((d, name) -> name.endsWith(".jar"));
+
+            // Ensure modFolderFiles isn't null.
+            if (modFolderFiles == null) modFolderFiles = new File[0];
+
+            // Finalize modFolderFiles in a new variable named finalModFolderFiles.
+            File[] finalModFolderFiles = modFolderFiles;
+
+            // Inform the end-user that we're loading mod info.
+            SwingUtilities.invokeLater(() -> {
+                statusBar.setMessage("Loading mod info...");
+
+                statusBar.setProgressIndeterminate(false);
+                statusBar.setProgressMaximum(workshopInfos.size() + finalModFolderFiles.length);
+            });
+
+            // Read the info file from the mod folder mods.
+            for (File f : modFolderFiles) {
+                // Read the mod info
+                ModInfo info = ModInfo.ReadModInfo(f);
+
+                // Ensure the loaded info isn't null.
+                // If it isn't, we'll ensure the mod doesn't currently exist in our
+                // mod info cache before adding it.
+                if (info != null) {
+                    if (modInfos.stream().noneMatch(i -> i.ID == null || i.ID.equalsIgnoreCase(info.ID)))
+                        modInfos.add(info);
+                }
+
+                // Increment the progress bar
+                SwingUtilities.invokeAndWait(() -> statusBar.setProgressValue(statusBar.getProgressValue() + 1));
+            }
+
+            // Read the info file from the Steam workshop mods.
+            for (SteamSearch.WorkshopInfo workshopInfo : workshopInfos) {
+                File[] files = workshopInfo.getInstallPath().toFile().listFiles((d, name) -> name.endsWith(".jar"));
+
+                if (files != null) {
+                    for (File f : files) {
+                        ModInfo info = ModInfo.ReadModInfo(f);
+
+                        if (info != null) {
+                            // Disable the update json url for workshop content.
+                            info.UpdateJSON = null;
+                            info.isWorkshop = true;
+
+                            // If the workshop item is a newer version, use it instead of the local mod.
+                            boolean doAdd = true;
+                            Iterator<ModInfo> it = modInfos.iterator();
+
+                            while (it.hasNext()) {
+                                ModInfo modInfo = it.next();
+
+                                if (modInfo.ID != null && modInfo.ID.equalsIgnoreCase(info.ID)) {
+                                    if (modInfo.ModVersion == null || info.ModVersion == null) {
+                                        doAdd = false;
+                                        break;
+                                    }
+
+                                    if (info.ModVersion.isGreaterThan(modInfo.ModVersion)) {
+                                        it.remove();
+                                    } else {
+                                        doAdd = false;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (doAdd) modInfos.add(info);
+                        }
+                    }
+                }
+
+                // Increment the progress bar
+                SwingUtilities.invokeAndWait(() -> statusBar.setProgressValue(statusBar.getProgressValue() + 1));
+            }
+
+            // Sort the mod infos alphabetically
+            modInfos.sort(Comparator.comparing(m -> m.Name));
+
+            // Clear the status bar's current message & hide the progress bar
+            SwingUtilities.invokeAndWait(() -> {
+                statusBar.clearMessage();
+                statusBar.setVisible(false);
+            });
+
+            // Return the final mod info array
+            return modInfos;
+        }
+
+        /**
+         * When the task finishes discovering all the mods,
+         * the mod list is then assigned to the launcher's
+         * modInfos variable, then informs the user that
+         * the launcher is finished discovering mods.
+         */
+        @Override
+        protected void done() {
+            try {
+                modInfos = get();
+                statusBar.showMessage("Done!");
+
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
+        }
+
+        /**
+         * Finds workshop mods.
+         */
+        private List<SteamSearch.WorkshopInfo> findWorkshopMods() {
+            List<SteamSearch.WorkshopInfo> workshopInfos = new ArrayList<>();
+
+            try {
+                String path = SteamWorkshop.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+
+                path = URLDecoder.decode(path, "utf-8");
+                path = new File(path).getPath();
+
+                ProcessBuilder builder = new ProcessBuilder(
+                    SteamSearch.findJRE(),
+                    "-cp", path + File.pathSeparatorChar + Loader.STS_JAR,
+                    "com.evacipated.cardcrawl.modthespire.steam.SteamWorkshop"
+                ).redirectError(ProcessBuilder.Redirect.INHERIT);
+
+                Process process = builder.start();
+
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                    String title = null;
+                    String id = null;
+                    String installPath = null;
+                    String timeUpdated = null;
+                    String line;
+
+                    while ((line = reader.readLine()) != null) {
+                        System.out.println(line);
+
+                        if (title == null) {
+                            title = line;
+                        } else if (id == null) {
+                            id = line;
+                        } else if (installPath == null) {
+                            installPath = line;
+                        } else if (timeUpdated == null) {
+                            timeUpdated = line;
+                        } else {
+                            SteamSearch.WorkshopInfo info = new SteamSearch.WorkshopInfo(title, id, installPath, timeUpdated, line);
+
+                            if (!info.hasTag("tool") && !info.hasTag("tools")) {
+                                workshopInfos.add(info);
+                            }
+
+                            title = null;
+                            id = null;
+                            installPath = null;
+                            timeUpdated = null;
+                        }
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            if (Loader.DEBUG) {
+                System.out.println("#########################");
+
+                for (SteamSearch.WorkshopInfo info : workshopInfos) {
+                    System.out.println("#        Title: " + info.getTitle());
+                    System.out.println("# Install Path: " + info.getInstallPath());
+                    System.out.println("# Time Updated: " + info.getTimeUpdated());
+                    System.out.println("#         Tags: " + Arrays.toString(info.getTags().toArray()));
+                    System.out.println("#########################");
+                }
+            }
+
+            return workshopInfos;
+        }
+
+        /**
+         * Saves the workshop mod's "last updated" timestamp to file.
+         */
+        private void saveWorkshopTimestamps() {
+            Map<String, Integer> lastUpdated = null;
+            String path = SpireConfig.makeFilePath(null, "WorkshopUpdated", "json");
+
+            if (new File(path).isFile()) {
+                try {
+                    String data = new String(Files.readAllBytes(Paths.get(path)));
+                    Gson gson = new Gson();
+                    java.lang.reflect.Type type = new TypeToken<Map<String, Integer>>() {
+                    }.getType();
+
+                    try {
+                        lastUpdated = gson.fromJson(data, type);
+                    } catch (JsonSyntaxException ignored) {
+                    }
+
+                    if (lastUpdated == null) lastUpdated = new HashMap<>();
+
+                    for (SteamSearch.WorkshopInfo info : workshopInfos) {
+                        if (info == null) continue;
+
+                        int savedTime = lastUpdated.getOrDefault(info.getID(), 0);
+
+                        if (savedTime < info.getTimeUpdated()) {
+                            lastUpdated.put(info.getID(), info.getTimeUpdated());
+
+                            if (savedTime != 0) {
+                                System.out.println(info.getTitle() + " WAS UPDATED!");
+                            }
+                        }
+                    }
+
+                    Gson gson1 = new GsonBuilder().setPrettyPrinting().create();
+                    String data1 = gson1.toJson(lastUpdated);
+
+                    Files.write(Paths.get(SpireConfig.makeFilePath(null, "WorkshopUpdated", "json")), data1.getBytes());
+
+                } catch (IOException e) {
+                    e.printStackTrace();  // TODO
+                }
+            }
+        }
+
+        /**
+         * Locates the current Slay the Spire version
+         * from the game's jar file.
+         */
+        private void findGameVersion() throws NullPointerException {
+            try {
+                URLClassLoader tmpLoader = new URLClassLoader(new URL[]{new File(Loader.STS_JAR).toURI().toURL()});
+
+                // Read CardCrawlGame.VERSION_NUM
+                InputStream in = tmpLoader.getResourceAsStream("com/megacrit/cardcrawl/core/CardCrawlGame.class");
+                ClassReader classReader = new ClassReader(Objects.requireNonNull(in));
+
+                classReader.accept(new GameVersionFinder(), 0);
+
+                // Read Settings.isBeta
+                InputStream in2 = tmpLoader.getResourceAsStream("com/megacrit/cardcrawl/core/Settings.class");
+                ClassReader classReader2 = new ClassReader(Objects.requireNonNull(in2));
+
+                classReader2.accept(new GameBetaFinder(), 0);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 }
