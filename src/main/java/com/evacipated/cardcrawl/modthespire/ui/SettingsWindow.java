@@ -57,7 +57,7 @@ public class SettingsWindow extends JDialog {
         mtsBeta.addItemListener(e -> {
             Loader.allowBeta = true;
 
-            Loader.MTS_CONFIG.setBool("beta.enabled", e.getStateChange() == ItemEvent.SELECTED);
+            Loader.MTS_CONFIG.setBool("isBeta", e.getStateChange() == ItemEvent.SELECTED);
         });
         launcherBypass.addItemListener(e -> Loader.MTS_CONFIG.setBool("launcher.presets.bypass", e.getStateChange() == ItemEvent.SELECTED));
 
@@ -84,7 +84,7 @@ public class SettingsWindow extends JDialog {
      * settings would not persist through individual sessions.
      */
     public void applySettings() {
-        Loader.allowBeta = Loader.MTS_CONFIG.getBool("beta.enabled");
+        Loader.allowBeta = Loader.MTS_CONFIG.getBool("isBeta");
 
         mtsDebug.setSelected(Loader.DEBUG);
         mtsBeta.setSelected(Loader.allowBeta);

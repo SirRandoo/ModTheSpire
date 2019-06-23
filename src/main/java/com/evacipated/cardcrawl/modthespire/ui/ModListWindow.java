@@ -89,7 +89,7 @@ public class ModListWindow extends JFrame implements WindowListener {
     public static Properties getDefaults() {
         Properties defaults = new Properties();
 
-        defaults.setProperty("beta.enabled", Boolean.toString(true));
+        defaults.setProperty("isBeta", Boolean.toString(true));
         defaults.setProperty("launcher.position.x", "center");
         defaults.setProperty("launcher.position.y", "center");
         defaults.setProperty("launcher.geometry.width", Integer.toString(geometry.width));
