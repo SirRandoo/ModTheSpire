@@ -52,6 +52,7 @@ public class ModListWindow extends JFrame implements WindowListener {
     private static final String defaultPreset = ConfigUtils.CONFIG_DIR + File.separator + "default.mts";
     private static Rectangle geometry = new Rectangle(0, 0, 800, 500);
     private List<ModInfo> modInfos = new ArrayList<>();
+
     // Top-down UI elements.
     private JMenuBar menuBar;
     private JTextArea presetLabel;
@@ -60,11 +61,14 @@ public class ModListWindow extends JFrame implements WindowListener {
     private JButton enableAll;
     private JButton disableAll;
     private AugmentedStatusBar statusBar;
+
     // Dialogs
     private SettingsWindow settingsWindow;
+
     // Persistence
     private boolean isMaximized;
     private boolean isCentered;
+
     // Internals
     private File preset = null;
     private DefaultListModel<ComplexListItem> listModel;
