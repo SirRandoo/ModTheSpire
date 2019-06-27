@@ -238,7 +238,7 @@ public class Launcher extends JFrame implements WindowListener {
 
         JMenuItem saveAsPreset = new JMenuItem("Save Preset as...");
         saveAsPreset.addActionListener((ActionEvent event) -> {
-            JFileChooser fileChooser = new JFileChooser(ConfigUtils.CONFIG_DIR);
+            JFileChooser fileChooser = new JFileChooser(ConfigUtils.CONFIG_DIR.toFile());
             fileChooser.setFileFilter(new FileNameExtensionFilter("ModTheSpire Preset", "mts"));
             fileChooser.setSelectedFile(new File("customPreset.mts"));
 
@@ -646,7 +646,7 @@ public class Launcher extends JFrame implements WindowListener {
      * a file prompt to load a preset.
      */
     private void loadPreset() {
-        JFileChooser fileChooser = new JFileChooser(ConfigUtils.CONFIG_DIR);
+        JFileChooser fileChooser = new JFileChooser(ConfigUtils.CONFIG_DIR.toFile());
         fileChooser.setFileFilter(new FileNameExtensionFilter("ModTheSpire Preset", "mts"));
 
         int result = fileChooser.showOpenDialog(this);

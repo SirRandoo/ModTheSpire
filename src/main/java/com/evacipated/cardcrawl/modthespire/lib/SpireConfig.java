@@ -1,6 +1,10 @@
 package com.evacipated.cardcrawl.modthespire.lib;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Properties;
 
 public class SpireConfig
@@ -24,11 +28,10 @@ public class SpireConfig
             dirPath = ConfigUtils.CONFIG_DIR + File.separator
                 + modName + File.separator;
         }
-        String filePath = dirPath + fileName + "." + ext;
-        File dir = new File(dirPath);
-        dir.mkdirs();
+        Path filePath = ConfigUtils.CONFIG_DIR.resolve(fileName + "." + ext);
+        filePath.toFile().mkdirs();
 
-        return filePath;
+        return filePath.toString();
     }
 
     public SpireConfig(String modName, String fileName) throws IOException
