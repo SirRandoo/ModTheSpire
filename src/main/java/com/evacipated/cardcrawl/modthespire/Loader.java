@@ -3,7 +3,7 @@ package com.evacipated.cardcrawl.modthespire;
 import com.evacipated.cardcrawl.modthespire.lib.SpireConfig;
 import com.evacipated.cardcrawl.modthespire.steam.SteamSearch;
 import com.evacipated.cardcrawl.modthespire.steam.SteamWorkshop;
-import com.evacipated.cardcrawl.modthespire.ui.ModListWindow;
+import com.evacipated.cardcrawl.modthespire.ui.Launcher;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
@@ -51,7 +51,7 @@ public class Loader
     public static boolean allowBeta = false;
 
     static String[] ARGS;
-    private static ModListWindow ex;
+    private static Launcher ex;
 
     public static boolean isModLoaded(String modID)
     {
@@ -105,7 +105,7 @@ public class Loader
             Properties defaults = new Properties();
             defaults.setProperty("debug", Boolean.toString(false));
             defaults.setProperty("out-jar", Boolean.toString(false));
-            defaults.putAll(ModListWindow.getDefaults());
+            defaults.putAll(Launcher.getDefaults());
             MTS_CONFIG = new SpireConfig(null, "ModTheSpire", defaults);
         } catch (IOException e) {
             e.printStackTrace();
@@ -172,7 +172,7 @@ public class Loader
         }
 
         EventQueue.invokeLater(() -> {
-            ex = new ModListWindow();
+            ex = new Launcher();
             ex.setVisible(true);
         });
 
@@ -274,7 +274,7 @@ public class Loader
 
 //        EventQueue.invokeLater(() -> {
 //            ModInfo[] modInfos = getAllMods(workshopInfos);
-//            ex = new ModListWindow(modInfos);
+//            ex = new Launcher(modInfos);
 //            ex.setVisible(true);
 //
 ////            ex.warnAboutMissingVersions();

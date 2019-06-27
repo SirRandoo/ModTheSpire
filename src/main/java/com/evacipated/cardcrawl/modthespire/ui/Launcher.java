@@ -48,7 +48,7 @@ import java.util.concurrent.ExecutionException;
  * immediate information display and quality of life shortcuts,
  * such as a play button.
  */
-public class ModListWindow extends JFrame implements WindowListener {
+public class Launcher extends JFrame implements WindowListener {
     private static final String defaultPreset = ConfigUtils.CONFIG_DIR + File.separator + "default.mts";
     private static Rectangle geometry = new Rectangle(0, 0, 800, 500);
     private List<ModInfo> modInfos = new ArrayList<>();
@@ -76,7 +76,7 @@ public class ModListWindow extends JFrame implements WindowListener {
     private boolean shouldBypass = true;
 
 
-    public ModListWindow() {
+    public Launcher() {
         addWindowListener(this);
 
         SwingUtilities.invokeLater(() -> {
@@ -117,7 +117,7 @@ public class ModListWindow extends JFrame implements WindowListener {
      * to resolve load order.
      */
     private File getDefaultPreset() {
-        File defaultPreset = new File(ModListWindow.defaultPreset);
+        File defaultPreset = new File(Launcher.defaultPreset);
 
         if (!defaultPreset.exists()) {
             new Thread(() -> {
