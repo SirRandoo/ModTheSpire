@@ -49,7 +49,7 @@ import java.util.stream.IntStream;
  * such as a play button.
  */
 public class Launcher extends JFrame implements WindowListener {
-    private static final String defaultPreset = ConfigUtils.CONFIG_DIR + File.separator + "default.mts";
+    private static final Path defaultPreset = ConfigUtils.CONFIG_DIR.resolve("default.mts");
     private static Rectangle geometry = new Rectangle(0, 0, 800, 500);
     private List<ModInfo> modInfos = new ArrayList<>();
 
@@ -83,13 +83,6 @@ public class Launcher extends JFrame implements WindowListener {
             initializeUI();
             validateUserPreferences();
         });
-
-//
-//        Enumeration<Object> ui = UIManager.getDefaults().keys();
-//
-//        while (ui.hasMoreElements()) {
-//            System.out.println(ui.nextElement().toString());
-//        }
     }
 
     /**
@@ -105,7 +98,7 @@ public class Launcher extends JFrame implements WindowListener {
         defaults.setProperty("launcher.geometry.width", Integer.toString(geometry.width));
         defaults.setProperty("launcher.geometry.height", Integer.toString(geometry.height));
         defaults.setProperty("launcher.maximized", Boolean.toString(false));
-        defaults.setProperty("launcher.presets.last", defaultPreset);
+        defaults.setProperty("launcher.presets.last", defaultPreset.toString());
         defaults.setProperty("launcher.presets.bypass", Boolean.toString(false));
 
         return defaults;
@@ -117,7 +110,7 @@ public class Launcher extends JFrame implements WindowListener {
      * to resolve load order.
      */
     private File getDefaultPreset() {
-        File defaultPreset = new File(Launcher.defaultPreset);
+        File defaultPreset = Launcher.defaultPreset.toFile();
 
         if (!defaultPreset.exists()) {
             new Thread(() -> {
