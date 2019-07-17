@@ -22,16 +22,16 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
+import java.awt.event.*;
 import java.io.*;
 import java.net.*;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.IntStream;
 
 /**
  * The main launcher window.
@@ -279,7 +279,12 @@ public class Launcher extends JFrame implements WindowListener {
         JMenuItem aboutAction = new JMenuItem("About");
         aboutAction.addActionListener((ActionEvent event) -> showAbout());
 
+        JMenuItem updateAction = new JMenuItem("Check for updates...");
+        updateAction.addActionListener((ActionEvent event) -> checkForUpdates());
+
         helpMenu.add(helpAction);
+        helpMenu.addSeparator();
+        helpMenu.add(updateAction);
         helpMenu.add(aboutAction);
 
         // Insert the menus to the menu bar
@@ -413,12 +418,23 @@ public class Launcher extends JFrame implements WindowListener {
             Loader.OUT_JAR = true;
             startStS();
 
-            if (Desktop.isDesktopSupported()) {
-                try {
-                    Desktop.getDesktop().open(new File(System.getProperty("user.dir")));
-                } catch (IOException e) {
-                    e.printStackTrace();
+        statusModFolder = new StatusButton(new ImageIcon(this.getClass().getResource("/assets/folder-icon.png")), "Opens the mods folder for ModTheSpire.");
+        statusModFolder.addActionListener((ActionEvent event) -> {
+            File file = new File(Loader.MOD_DIR);
+
+            try {
+                if (!file.exists()) {
+                    //noinspection ResultOfMethodCallIgnored
+                    file.mkdirs();
                 }
+
+                if (Desktop.isDesktopSupported()) {
+                    Desktop.getDesktop().open(file);
+                }
+            } catch (IOException e) {
+                showStatusMessage(e.getMessage(), 2);
+
+                e.printStackTrace();
             }
         });
     }
