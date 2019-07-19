@@ -51,7 +51,9 @@ import java.util.stream.IntStream;
 public class Launcher extends JFrame implements WindowListener {
     private static final Path defaultPreset = ConfigUtils.CONFIG_DIR.resolve("default.mts");
     private static Rectangle geometry = new Rectangle(0, 0, 800, 500);
+    private static Launcher instance;
     private List<ModInfo> modInfos = new ArrayList<>();
+    private HashMap<String, ModInfo> mappedInfos = new HashMap<>();
 
     // Top-down UI elements.
     private JMenuBar menuBar;
@@ -167,44 +169,13 @@ public class Launcher extends JFrame implements WindowListener {
     }
 
     /**
-     * Initializes the launcher's ui.
+     * Returns the current instance of the Launcher class.
+     * If one hasn't been created, it will create it.
      */
-    private void initializeUI() {
-        // Set the look and feel of the ui.
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+    public static Launcher getInstance() {
+        if (instance == null) instance = new Launcher();
 
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
-            e.printStackTrace();
-        }
-
-        // Instead of using EXIT_ON_CLOSE, we'll use HIDE_ON_CLOSE
-        // to ensure our window listener events fire.
-        setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
-        setTitle("ModTheSpire");
-        setResizable(true);
-
-        initializeMenuBar();
-        initializeStatusBar();
-
-        // Add all the components to the launcher.
-        getContentPane().add(menuBar, BorderLayout.NORTH);
-        getContentPane().add(initializeModView(), BorderLayout.CENTER);
-        getContentPane().add(statusBar, BorderLayout.SOUTH);
-
-        pack();
-
-        // To ensure the launcher doesn't get shrunk too far below
-        // the recommended size.
-        setMinimumSize(new Dimension(geometry.width, geometry.height));
-
-        // Move the launcher window to the position we have saved.
-        if (isCentered) {
-            setLocationRelativeTo(null);
-
-        } else {
-            setLocation(geometry.getLocation());
-        }
+        return instance;
     }
 
     /**
@@ -283,6 +254,47 @@ public class Launcher extends JFrame implements WindowListener {
         // Insert the menus to the menu bar
         menuBar.add(fileMenu);
         menuBar.add(helpMenu);
+    }
+
+    /**
+     * Initializes the launcher's ui.
+     */
+    private void initializeUI() {
+        // Set the look and feel of the ui.
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
+            e.printStackTrace();
+        }
+
+        // Instead of using EXIT_ON_CLOSE, we'll use HIDE_ON_CLOSE
+        // to ensure our window listener events fire.
+        setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
+        setTitle("ModTheSpire");
+        setResizable(true);
+
+        initializeMenuBar();
+        initializeStatusBar();
+
+        // Add all the components to the launcher.
+        getContentPane().add(menuBar, BorderLayout.NORTH);
+        getContentPane().add(initializeCentralUI(), BorderLayout.CENTER);
+        getContentPane().add(statusBar, BorderLayout.SOUTH);
+
+        pack();
+
+        // To ensure the launcher doesn't get shrunk too far below
+        // the recommended size.
+        setMinimumSize(new Dimension(geometry.width, geometry.height));
+
+        // Move the launcher window to the position we have saved.
+        if (isCentered) {
+            setLocationRelativeTo(null);
+
+        } else {
+            setLocation(geometry.getLocation());
+        }
     }
 
     /**
@@ -824,6 +836,22 @@ public class Launcher extends JFrame implements WindowListener {
     }
 
     /**
+     * Returns whether or not a mod matching the specified id was discovered.
+     *
+     * @param modId The ID to check for.
+     */
+    public boolean wasModDiscovered(String modId) {
+        return mappedInfos.containsKey(modId);
+    }
+
+    /**
+     * Returns the current list of discovered mods.
+     */
+    public List<ModInfo> getDiscoveredMods() {
+        return modInfos;
+    }
+
+    /**
      * Invoked the first time the launcher window is made visible.
      * <p>
      * This override is responsible for invoking the mod discovery process,
@@ -1318,6 +1346,10 @@ public class Launcher extends JFrame implements WindowListener {
         protected void done() {
             try {
                 modInfos = get();
+
+                mappedInfos.clear();
+                modInfos.forEach(modInfo -> mappedInfos.put(modInfo.ID, modInfo));
+
                 statusBar.showMessage("Done!");
 
             } catch (InterruptedException | ExecutionException e) {
