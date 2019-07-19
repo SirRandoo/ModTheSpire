@@ -1,48 +1,44 @@
 package com.evacipated.cardcrawl.modthespire.ui;
 
 import com.evacipated.cardcrawl.modthespire.Loader;
+import com.evacipated.cardcrawl.modthespire.ModInfo;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.StringJoiner;
 
 public class ComplexListItem extends JPanel {
-    // Icons
-    public static final ImageIcon LOADING_ICON = new ImageIcon(Loader.class.getResource("/assets/ajax-loader.gif"));
-    public static final ImageIcon DOWNLOAD_ICON = new ImageIcon(Loader.class.getResource("/assets/download.gif"));
-    public static final ImageIcon ERROR_ICON = new ImageIcon(Loader.class.getResource("/assets/error.gif"));
-    public static final ImageIcon CHECKMARK_ICON = new ImageIcon(Loader.class.getResource("/assets/good.gif"));
-    public static final ImageIcon UPDATE_ICON = new ImageIcon(Loader.class.getResource("/assets/update.gif"));
-    public static final ImageIcon WARNING_ICON = new ImageIcon(Loader.class.getResource("/assets/warning.gif"));
-    public static final ImageIcon WORKSHOP_ICON = new ImageIcon(Loader.class.getResource("/assets/workshop.gif"));
+    // Standard icons
+    public static final ImageIcon ENABLED_ICON = new ImageIcon(Loader.class.getResource("/assets/check-icon.png"));
+    public static final ImageIcon DISABLED_ICON = new ImageIcon(Loader.class.getResource("/assets/close-icon.png"));
+    public static final ImageIcon WORKSHOP_ICON = new ImageIcon(Loader.class.getResource("/assets/workshop.png"));
 
-    private JCheckBox label;
+    // Error icons
+    public static final ImageIcon ERROR_ICON = new ImageIcon(Loader.class.getResource("/assets/error-icon.png"));
+    public static final ImageIcon WARNING_ICON = new ImageIcon(Loader.class.getResource("/assets/warning-icon.png"));
+
+    private JLabel name;
     private JLabel sourceIcon;
-    private JButton statusButton;
-    private States state;
-    private Sources source;
+    private StatusButton statusButton;
+    private StatusButton stateButton;
 
-
-    /**
-     * Creates a new ComplexListItem.
-     */
-    public ComplexListItem() {
-        setupUI();
-    }
+    private boolean isEnabled;
+    private ModInfo modInfo;
+    private String[] missingDependencies;
 
     /**
-     * Creates a new ComplexListItem.
+     * Constructs a new ComplexListItem.
      *
-     * @param name  The name to label the item
-     * @param state The current state of the item.  If the
-     *              state is null, the status button will
-     *              not be visible.
+     * @param modInfo The ModInfo instance created by the loader.
      */
-    public ComplexListItem(String name, States state) {
-        this();
+    public ComplexListItem(ModInfo modInfo) {
+        this.modInfo = modInfo;
+        missingDependencies = getMissingDependencies();
+        isEnabled = false;
 
-        label.setText(name);
-        updateModState(state);
+        setupUI();
     }
 
     /**
@@ -51,9 +47,22 @@ public class ComplexListItem extends JPanel {
      * You shouldn't need to call this yourself.
      */
     private void setupUI() {
-        label = new JCheckBox();
-        statusButton = new JButton();
+        // Ui element creation
+        name = new JLabel();
         sourceIcon = new JLabel();
+        stateButton = new StatusButton(null);
+        statusButton = new StatusButton(WARNING_ICON);
+
+        // Element population
+        name.setText(modInfo.Name != null ? modInfo.Name : modInfo.ID);
+        setEnabled(false);
+
+        if (!modInfo.isWorkshop) sourceIcon.setVisible(false);
+        if (missingDependencies.length <= 0) statusButton.setVisible(false);
+
+        // Listeners
+        stateButton.addActionListener(e -> setEnabled(!isEnabled));
+        statusButton.addActionListener(e -> showMissingDependencies());
 
         setLayout(new GridBagLayout());
         setBorder(new EmptyBorder(0, 0, 0, 0));
@@ -63,7 +72,8 @@ public class ComplexListItem extends JPanel {
         constraints.weighty = 1;
         constraints.weightx = 1;
 
-        add(label, constraints);
+        add(stateButton);
+        add(name, constraints);
 
         constraints.anchor = GridBagConstraints.EAST;
         add(statusButton, constraints);
@@ -71,143 +81,44 @@ public class ComplexListItem extends JPanel {
     }
 
     /**
-     * Returns the current state for the mod item.
+     * Updates the enabled state of the item.
+     *
+     * @param state Whether or not the item should be considered enabled.
      */
-    public States getModState() {
-        return state;
+    public void setEnabled(boolean state) {
+        isEnabled = state;
+
+        stateButton.setIcon(isEnabled ? DISABLED_ICON : ENABLED_ICON);
+        stateButton.setToolTipText((isEnabled ? "Disables " : "Enables ") + name.getText());
     }
 
     /**
-     * Updates the state of a mod item.
-     *
-     * @param state The new state of the mod item.
+     * Displays a dialog to the end-user containing a list of mods currently missing.
      */
-    public void updateModState(States state) {
-        this.state = state;
+    public void showMissingDependencies() {
+        StringJoiner message = new StringJoiner(", ");
 
-        // If the state isn't null, update the status button's icon to
-        // reflect its current state.
-        if (this.state != null) {
-            switch (this.state) {
-                case DEPENDENCY_MISSING:
-                case UPDATE_FAILED:
-                    statusButton.setIcon(ERROR_ICON);
-                    break;
+        for (String dependency : missingDependencies) {
+            message.add(dependency);
+        }
 
-                case UPDATE_PENDING:
-                    statusButton.setIcon(UPDATE_ICON);
-                    break;
+        JOptionPane.showMessageDialog(Launcher.getInstance(), "Missing dependencies: " + message.toString(), name.getText() + " - Missing Dependencies", JOptionPane.PLAIN_MESSAGE);
+    }
 
-                case UPDATING:
-                    statusButton.setIcon(LOADING_ICON);
-                    break;
+    /**
+     * Returns a string array of the item's missing dependencies.
+     *
+     * @return A complete list of missing dependencies.
+     */
+    public String[] getMissingDependencies() {
+        ArrayList<String> dependencies = new ArrayList<>();
+
+        for (String dependency : modInfo.Dependencies) {
+            if (!Launcher.getInstance().wasModDiscovered(dependency)) {
+                dependencies.add(dependency);
             }
         }
 
-        // If the state isn't null, allow the user to interact with it.
-        if (this.state != null) {
-            statusButton.setVisible(true);
-            statusButton.setEnabled(true);
-
-            // If the state is null, disallow the user from interacting with it.
-        } else {
-            statusButton.setEnabled(false);
-            statusButton.setVisible(false);
-        }
+        return (String[]) dependencies.toArray();
     }
-
-    /**
-     * Gets the check state for the JCheckBox label.
-     */
-    public boolean getCheckState() {
-        return label.isSelected();
-    }
-
-    /**
-     * Sets the check state for the JCheckBox label.
-     *
-     * @param checkState Whether or not the box should be checked.
-     */
-    public void setCheckState(boolean checkState) {
-        label.setSelected(checkState);
-    }
-
-    /**
-     * Gets the text on the item's check box.
-     */
-    public String getText() {
-        return label.getText();
-    }
-
-    /**
-     * Gets the JCheckBox for the item.
-     */
-    public JCheckBox getCheckBox() {
-        return label;
-    }
-
-    /**
-     * Sets the list item's display text.
-     */
-    public void setText(String text) {
-        label.setText(text);
-    }
-
-    /**
-     * Returns the mod's source.
-     */
-    public Sources getSource() {
-        return source;
-    }
-
-    /**
-     * Sets the source for list item.
-     *
-     * @param source A source indicated where the mod came from.
-     */
-    public void setSource(Sources source) {
-        if (source == Sources.WORKSHOP) {
-            this.sourceIcon.setIcon(WORKSHOP_ICON);
-        }
-
-        this.source = source;
-    }
-
-    /**
-     * The different states a mod item can be in.
-     *
-     * <h3>DEPENDENCY_MISSING</h3>
-     * A mod item is currently missing dependencies.
-     * Users can click the status button while it's
-     * in this state to view the missing dependencies.
-     *
-     * <h3>UPDATE_MISSING</h3>
-     * A mod item couldn't be updated for some arcane
-     * reason.  Users can click the status button while
-     * it's in this state to view the reason an update
-     * failed.
-     *
-     * <h3>UPDATE_PENDING</h3>
-     * A mod item has a new update, but has yet to be
-     * installed.  Users can click the status button
-     * while it's in this state to update a specific
-     * mod.
-     *
-     * <h3>UPDATING</h3>
-     * A mod item is currently updating.  Users can
-     * click the status button while it's in this
-     * state to view the updater's current status.
-     */
-    enum States {DEPENDENCY_MISSING, UPDATE_FAILED, UPDATE_PENDING, UPDATING}
-
-    /**
-     * The different sources a mod item can originate from.
-     *
-     * <h3>OTHER</h3>
-     * A mod item originated from a non-workshop repository.
-     *
-     * <h3>WORKSHOP</h3>
-     * A mod item originated from the Steam workshop.
-     */
-    enum Sources {OTHER, WORKSHOP}
 }
