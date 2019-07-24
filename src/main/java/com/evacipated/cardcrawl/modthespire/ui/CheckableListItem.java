@@ -22,6 +22,8 @@ public class CheckableListItem extends JPanel {
      */
     public CheckableListItem(String text) {
         setupUI();
+
+        name.setText(text);
     }
 
     /**
