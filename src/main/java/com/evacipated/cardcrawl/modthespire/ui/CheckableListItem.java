@@ -55,6 +55,13 @@ public class CheckableListItem extends JPanel {
     }
 
     /**
+     * Returns the enabled state of the item.
+     */
+    public boolean getEnabled() {
+        return isEnabled;
+    }
+
+    /**
      * Updates the enabled state of the item.
      *
      * @param state Whether or not the item should be considered enabled.
@@ -63,5 +70,12 @@ public class CheckableListItem extends JPanel {
         isEnabled = state;
 
         stateBtn.setIcon(isEnabled ? DISABLED_ICON : ENABLED_ICON);
+    }
+
+    /**
+     * Returns the current text being display on the item.
+     */
+    public String getText() {
+        return name.getText();
     }
 }
