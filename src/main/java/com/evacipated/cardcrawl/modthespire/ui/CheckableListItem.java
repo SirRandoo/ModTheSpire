@@ -15,6 +15,7 @@ public class CheckableListItem extends JPanel {
     protected JLabel name;
     protected JButton stateBtn;
 
+    // Internal
     private boolean isEnabled;
 
     /**
@@ -37,10 +38,10 @@ public class CheckableListItem extends JPanel {
         stateBtn = new StatusButton(null);
 
         // Element population
-        setEnabled(false);
+        setCheckState(false);
 
         // Listeners
-        stateBtn.addActionListener(e -> setEnabled(!isEnabled));
+        stateBtn.addActionListener(e -> setCheckState(!isEnabled));
 
         setLayout(new GridBagLayout());
         setBorder(new EmptyBorder(0, 0, 0, 0));
@@ -55,18 +56,18 @@ public class CheckableListItem extends JPanel {
     }
 
     /**
-     * Returns the enabled state of the item.
+     * Returns the check state of the item.
      */
-    public boolean getEnabled() {
+    public boolean getCheckState() {
         return isEnabled;
     }
 
     /**
-     * Updates the enabled state of the item.
+     * Updates the check state state of the item.
      *
      * @param state Whether or not the item should be considered enabled.
      */
-    public void setEnabled(boolean state) {
+    public void setCheckState(boolean state) {
         isEnabled = state;
 
         stateBtn.setIcon(isEnabled ? DISABLED_ICON : ENABLED_ICON);
@@ -77,5 +78,21 @@ public class CheckableListItem extends JPanel {
      */
     public String getText() {
         return name.getText();
+    }
+
+    /**
+     * Returns the check button's enabled state.
+     */
+    public boolean getEnabledState() {
+        return stateBtn.isEnabled();
+    }
+
+    /**
+     * Updates the check button's enabled state.
+     *
+     * @param state Whether or not the check button should be enabled.
+     */
+    public void setEnabledState(boolean state) {
+        stateBtn.setEnabled(state);
     }
 }
