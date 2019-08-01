@@ -78,7 +78,7 @@ public class Launcher extends JFrame implements WindowListener {
     private boolean shouldBypass = true;
 
 
-    public Launcher() {
+    private Launcher() {
         addWindowListener(this);
 
         SwingUtilities.invokeLater(() -> {
@@ -104,6 +104,16 @@ public class Launcher extends JFrame implements WindowListener {
         defaults.setProperty("launcher.presets.bypass", Boolean.toString(false));
 
         return defaults;
+    }
+
+    /**
+     * Returns the current instance of the Launcher class.
+     * If one hasn't been created, it will create it.
+     */
+    public static Launcher getInstance() {
+        if (instance == null) instance = new Launcher();
+
+        return instance;
     }
 
     /**
