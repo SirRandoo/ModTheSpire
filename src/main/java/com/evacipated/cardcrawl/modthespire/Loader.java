@@ -51,7 +51,6 @@ public class Loader
     public static boolean allowBeta = false;
 
     static String[] ARGS;
-    private static Launcher ex;
 
     public static boolean isModLoaded(String modID)
     {
@@ -172,8 +171,7 @@ public class Loader
         }
 
         EventQueue.invokeLater(() -> {
-            ex = new Launcher();
-            ex.setVisible(true);
+            Launcher.getInstance().setVisible(true);
         });
 
         List<SteamSearch.WorkshopInfo> workshopInfos = new ArrayList<>();
@@ -291,7 +289,7 @@ public class Loader
 
     public static void closeWindow()
     {
-        ex.dispatchEvent(new WindowEvent(ex, WindowEvent.WINDOW_CLOSING));
+        Launcher.getInstance().dispatchEvent(new WindowEvent(Launcher.getInstance(), WindowEvent.WINDOW_CLOSING));
     }
 
     // runMods - sets up the ClassLoader, sets the isModded flag and launches the game
@@ -414,7 +412,7 @@ public class Loader
                         @Override
                         public void run()
                         {
-                            ex.setState(Frame.ICONIFIED);
+                            Launcher.getInstance().setState(Frame.ICONIFIED);
                         }
                     },
                     1000
