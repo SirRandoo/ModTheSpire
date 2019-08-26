@@ -62,6 +62,7 @@ public class Launcher extends JFrame implements WindowListener {
 
     // Dialogs
     private SettingsWindow settingsWindow;
+    private JFileChooser fileChooser;
 
     // Persistence
     private boolean isMaximized;
@@ -208,10 +209,6 @@ public class Launcher extends JFrame implements WindowListener {
 
         JMenuItem saveAsPreset = new JMenuItem("Save Preset as...");
         saveAsPreset.addActionListener((ActionEvent event) -> {
-            JFileChooser fileChooser = new JFileChooser(ConfigUtils.CONFIG_DIR.toFile());
-            fileChooser.setFileFilter(new FileNameExtensionFilter("ModTheSpire Preset", "mts"));
-            fileChooser.setSelectedFile(new File("customPreset.mts"));
-
             int result = fileChooser.showSaveDialog(this);
 
             if (result == JFileChooser.APPROVE_OPTION) {
@@ -222,7 +219,7 @@ public class Launcher extends JFrame implements WindowListener {
         });
 
         JMenuItem settingsAction = new JMenuItem("Settings..");
-        settingsAction.addActionListener((ActionEvent event) -> openSettings());
+        settingsAction.addActionListener((ActionEvent event) -> settingsWindow.setVisible(true));
 
         JMenuItem exitAction = new JMenuItem("Exit");
         exitAction.addActionListener((ActionEvent event) -> this.dispose());
@@ -301,6 +298,14 @@ public class Launcher extends JFrame implements WindowListener {
         } else {
             setLocation(geometry.getLocation());
         }
+
+        // Set up the JFileChooser
+        fileChooser = new JFileChooser(ConfigUtils.CONFIG_DIR);
+        fileChooser.setFileFilter(new FileNameExtensionFilter("ModTheSpire Preset", "mts"));
+        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+
+        // Set up the settings dialog
+        settingsWindow = new SettingsWindow(this);
     }
 
     /**
@@ -710,19 +715,6 @@ public class Launcher extends JFrame implements WindowListener {
     private void setPreset(File preset) {
         presetLabel.setText("Preset: " + preset.getName().substring(0, preset.getName().lastIndexOf('.')));
         this.preset = preset;
-    }
-
-    /**
-     * Invoked when the end-user clicks the "Settings..."
-     * action in the file menu.
-     * <p>
-     * This method is responsible for displaying the settings
-     * dialog to the end-user.
-     */
-    private void openSettings() {
-        if (settingsWindow == null) settingsWindow = new SettingsWindow(this);
-
-        settingsWindow.setVisible(true);
     }
 
     /**
