@@ -1,7 +1,3 @@
-/*
-  Created by SirRandoo
- */
-
 package com.evacipated.cardcrawl.modthespire.ui;
 
 import com.evacipated.cardcrawl.modthespire.GameBetaFinder;
