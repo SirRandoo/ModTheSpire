@@ -1068,7 +1068,9 @@ public class Launcher extends JFrame implements WindowListener {
 
                 // Add the new items
                 for (PresetItem item : newModList) {
-                    ComplexListItem component = new ComplexListItem(item.name, null);
+                    ModListItem i = new ModListItem()
+
+                    PresetItem component = new CheckableListItem(item.name, null);
                     component.setCheckState(item.enabled);
 
                     listModel.addElement(component);
