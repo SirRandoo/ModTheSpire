@@ -45,10 +45,10 @@ import java.util.stream.IntStream;
  * such as a play button.
  */
 public class Launcher extends JFrame implements WindowListener {
-    private static final Path defaultPreset = ConfigUtils.CONFIG_DIR.resolve("default.mts");
+    private static final Path defaultPreset = Paths.get(ConfigUtils.CONFIG_DIR).resolve("default.mts");
     private static Rectangle geometry = new Rectangle(0, 0, 800, 500);
     private static Launcher instance;
-    private List<ModInfo> modInfos = new ArrayList<>();
+    private ArrayList<ModInfo> modInfos = new ArrayList<>();
     private HashMap<String, ModInfo> mappedInfos = new HashMap<>();
 
     // Top-down UI elements.
@@ -69,8 +69,8 @@ public class Launcher extends JFrame implements WindowListener {
     private boolean isCentered;
 
     // Internals
-    private File preset = null;
-    private DefaultListModel<ComplexListItem> listModel;
+    private Preset preset = null;
+    private DefaultListModel<ModListItem> listModel;
     private boolean outJarRequested = false;
     private boolean shouldBypass = true;
 
@@ -91,7 +91,7 @@ public class Launcher extends JFrame implements WindowListener {
     public static Properties getDefaults() {
         Properties defaults = new Properties();
 
-        defaults.setProperty("isBeta", Boolean.toString(true));
+        defaults.setProperty("launcher.beta.enabled", Boolean.toString(true));
         defaults.setProperty("launcher.position.x", "center");
         defaults.setProperty("launcher.position.y", "center");
         defaults.setProperty("launcher.geometry.width", Integer.toString(geometry.width));
@@ -155,7 +155,7 @@ public class Launcher extends JFrame implements WindowListener {
         Properties properties = new Properties();
 
         for (int index = 0; index < listModel.getSize(); index++) {
-            ComplexListItem item = listModel.getElementAt(index);
+            CheckableListItem item = listModel.getElementAt(index);
 
             for (ModInfo modInfo : modInfos) {
                 if (Objects.isNull(modInfo.ID)) continue;
@@ -621,7 +621,7 @@ public class Launcher extends JFrame implements WindowListener {
 //        File[] selectedMods = new File[size];
 //
 //        for (int i = 0; i < listModel.getSize(); i++) {
-//            ComplexListItem item = listModel.getElementAt(i);
+//            CheckableListItem item = listModel.getElementAt(i);
 //
 //            for (ModInfo modInfo : modInfos) {
 //                if (Objects.isNull(modInfo.ID)) continue;
@@ -649,7 +649,7 @@ public class Launcher extends JFrame implements WindowListener {
             File[] selectedMods = new File[size];
 
             for (int index = 0; index < listModel.getSize(); index++) {
-                ComplexListItem item = listModel.getElementAt(index);
+                CheckableListItem item = listModel.getElementAt(index);
 
                 for (ModInfo modInfo : modInfos) {
                     if (Objects.isNull(modInfo.ID)) continue;
@@ -678,9 +678,6 @@ public class Launcher extends JFrame implements WindowListener {
      * a file prompt to load a preset.
      */
     private void loadPreset() {
-        JFileChooser fileChooser = new JFileChooser(ConfigUtils.CONFIG_DIR.toFile());
-        fileChooser.setFileFilter(new FileNameExtensionFilter("ModTheSpire Preset", "mts"));
-
         int result = fileChooser.showOpenDialog(this);
 
         if (result == JFileChooser.APPROVE_OPTION) {
