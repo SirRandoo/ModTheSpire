@@ -228,6 +228,12 @@ public class Preset {
          */
         private boolean jre51 = false;
 
+        /**
+         * Whether or not this preset should bypass the launcher when its loaded.
+         * *Quick-boot presets will still adhere to the launcher's built-in launch timer.
+         */
+        private boolean bypass = false;
+
         public boolean isDebugEnabled() {
             return debug;
         }
@@ -242,6 +248,10 @@ public class Preset {
 
         public boolean isJre51Mode() {
             return jre51;
+        }
+
+        public boolean shouldBypass() {
+            return bypass;
         }
     }
 }
