@@ -114,35 +114,11 @@ public class Launcher extends JFrame implements WindowListener {
     }
 
     /**
-     * Generates a default preset using the list the
-     * loader generated.  This method does not attempt
-     * to resolve load order.
+     * Generates a default preset from the mod discovery.
+     * *This method does not attempt to resolve load order.
      */
-    private File getDefaultPreset() {
-        File defaultPreset = Launcher.defaultPreset.toFile();
-
-        if (!defaultPreset.exists()) {
-            new Thread(() -> {
-                try {
-                    FileWriter fileWriter = new FileWriter(defaultPreset);
-                    Properties properties = new Properties();
-
-                    for (ModInfo modInfo : modInfos) {
-                        if (Objects.isNull(modInfo.ID)) continue;
-
-                        properties.setProperty(modInfo.ID + ".enabled", Boolean.toString(false));
-                        properties.setProperty(modInfo.ID + ".position", Integer.toString(properties.size() / 2));
-                    }
-
-                    properties.store(fileWriter, "The default ModTheSpire preset.");
-
-                } catch (IOException e) {
-                    System.out.println("Could not create default.mts file!  (" + e.toString() + ")");
-                }
-            }).start();
-        }
-
-        return defaultPreset;
+    private Preset getDefaultPreset() {
+        return Preset.getDefaultPreset(modInfos, mappedInfos);
     }
 
     /**
