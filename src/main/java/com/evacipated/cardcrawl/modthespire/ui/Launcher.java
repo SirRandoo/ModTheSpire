@@ -122,46 +122,6 @@ public class Launcher extends JFrame implements WindowListener {
     }
 
     /**
-     * Generates a preset properties object from the
-     * current list of mods.  This method stores the
-     * mod's current state and position to a Properties
-     * object to use for saving.
-     */
-    private Properties generatePresetProperties() {
-        Properties properties = new Properties();
-
-        for (int index = 0; index < listModel.getSize(); index++) {
-            CheckableListItem item = listModel.getElementAt(index);
-
-            for (ModInfo modInfo : modInfos) {
-                if (Objects.isNull(modInfo.ID)) continue;
-
-                String displayName = modInfo.Name;
-
-                if (Objects.isNull(displayName)) displayName = modInfo.ID;
-
-                if (displayName.equalsIgnoreCase(item.getText())) {
-                    properties.setProperty(modInfo.ID.toLowerCase() + ".enabled", Boolean.toString(item.getCheckState()));
-                    properties.setProperty(modInfo.ID.toLowerCase() + ".position", Integer.toString(index));
-                    break;
-                }
-            }
-        }
-
-        return properties;
-    }
-
-    /**
-     * Returns the current instance of the Launcher class.
-     * If one hasn't been created, it will create it.
-     */
-    public static Launcher getInstance() {
-        if (instance == null) instance = new Launcher();
-
-        return instance;
-    }
-
-    /**
      * Initializes the menu bar.
      * <p>
      * The menu bar is the top-most panel of the launcher.
