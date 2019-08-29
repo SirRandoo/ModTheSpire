@@ -188,10 +188,9 @@ public class Launcher extends JFrame implements WindowListener {
             int result = fileChooser.showSaveDialog(this);
 
             if (result == JFileChooser.APPROVE_OPTION) {
-                preset = fileChooser.getSelectedFile();
+                preset.setPresetFile(fileChooser.getSelectedFile());
+                savePreset();
             }
-
-            savePreset();
         });
 
         JMenuItem settingsAction = new JMenuItem("Settings..");
