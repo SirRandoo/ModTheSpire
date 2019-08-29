@@ -218,17 +218,6 @@ public class Preset {
         private boolean beta = false;
 
         /**
-         * Whether or not this preset should only output a dump jar.
-         */
-        private boolean outJar = false;
-
-        /**
-         * Whether or not this preset should be ran with JRE51 instead
-         * of the system default.
-         */
-        private boolean jre51 = false;
-
-        /**
          * Whether or not this preset should bypass the launcher when its loaded.
          * *Quick-boot presets will still adhere to the launcher's built-in launch timer.
          */
@@ -240,14 +229,6 @@ public class Preset {
 
         public boolean shouldAllowBetas() {
             return beta;
-        }
-
-        public boolean shouldOutputJar() {
-            return outJar;
-        }
-
-        public boolean isJre51Mode() {
-            return jre51;
         }
 
         public boolean shouldBypass() {
