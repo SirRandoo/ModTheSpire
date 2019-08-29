@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.Properties;
 
 public class SpireConfig
@@ -28,10 +27,11 @@ public class SpireConfig
             dirPath = ConfigUtils.CONFIG_DIR + File.separator
                 + modName + File.separator;
         }
-        Path filePath = ConfigUtils.CONFIG_DIR.resolve(fileName + "." + ext);
-        filePath.toFile().mkdirs();
+        String filePath = dirPath + fileName + "." + ext;
+        File dir = new File(dirPath);
+        dir.mkdirs();
 
-        return filePath.toString();
+        return filePath;
     }
 
     public SpireConfig(String modName, String fileName) throws IOException
