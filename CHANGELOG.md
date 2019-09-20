@@ -1,6 +1,18 @@
 ## Changelog ##
 #### dev ####
 
+#### v3.13.1 ####
+* Fix loading workshop beta mods when local beta mod should be loaded
+
+#### v3.13.0 ####
+* Save workshop item locations so they can be used later without Steam running
+* Fix regression of ByRef named type parameter
+
+#### v3.12.0 ####
+* Make ByRef work on all Insert patch parameters, not just localvars
+* Add capturing private fields as patch parameters
+* Add ability to load different mod file on beta branch
+
 #### v3.11.0 ####
 * Add check to Prefix for ByRef not being array type
 * Fix ByRef not working on array types

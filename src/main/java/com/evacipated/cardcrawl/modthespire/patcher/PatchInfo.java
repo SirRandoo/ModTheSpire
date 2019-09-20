@@ -22,7 +22,7 @@ public abstract class PatchInfo
     {
         System.out.println("Patch Class: [" + patchClassName() + "]");
         System.out.println(" - Patching [" + ctMethodToPatch.getLongName() + "]");
-        System.out.printf(" - ");
+        System.out.print(" - ");
         System.out.println(debugMsg());
     }
 
@@ -48,7 +48,8 @@ public abstract class PatchInfo
 
     public abstract void doPatch() throws PatchingException;
 
-    protected static boolean paramByRef(Object[] annotations) {
+    protected static boolean paramByRef(Object[] annotations)
+    {
         for (Object o : annotations) {
             if (o instanceof ByRef) {
                 return true;
@@ -58,7 +59,8 @@ public abstract class PatchInfo
     }
 
     // Gets the typename from the ByRef annotation
-    protected static String paramByRefTypename(Object[] annotations) {
+    protected static String paramByRefTypename(Object[] annotations)
+    {
         for (Object o : annotations) {
             if (o instanceof ByRef) {
                 return ((ByRef) o).type();
@@ -78,5 +80,12 @@ public abstract class PatchInfo
         } catch (ArrayIndexOutOfBoundsException e) {
             return null;
         }
+    }
+
+    protected static String paramByRefTypenamePrivateCapture(CtBehavior ctMethodToPatch, String paramName) throws NotFoundException
+    {
+        CtClass ctClass = ctMethodToPatch.getDeclaringClass();
+        CtField ctField = ctClass.getField(paramName);
+        return ctField.getType().getName();
     }
 }
