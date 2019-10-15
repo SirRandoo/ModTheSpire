@@ -2,14 +2,8 @@ package com.evacipated.cardcrawl.modthespire;
 
 import com.evacipated.cardcrawl.modthespire.lib.SpireConfig;
 import com.evacipated.cardcrawl.modthespire.steam.SteamSearch;
-import com.evacipated.cardcrawl.modthespire.steam.SteamWorkshop;
 import com.evacipated.cardcrawl.modthespire.ui.Launcher;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonSyntaxException;
-import com.evacipated.cardcrawl.modthespire.ui.ModSelectWindow;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import com.vdurmont.semver4j.Semver;
@@ -20,7 +14,10 @@ import org.objectweb.asm.ClassReader;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowEvent;
-import java.io.*;
+import java.io.File;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
@@ -56,7 +53,7 @@ public class Loader
     public static String profileArg = null;
 
     static String[] ARGS;
-    private static ModSelectWindow ex;
+    private static Launcher ex;
 
     public static boolean isModLoaded(String modID)
     {
@@ -188,50 +185,50 @@ public class Loader
             Launcher.getInstance().setVisible(true);
         });
 
-        List<SteamSearch.WorkshopInfo> workshopInfos = new ArrayList<>();
-        try {
-            System.out.println("Searching for Workshop items...");
-            String path = SteamWorkshop.class.getProtectionDomain().getCodeSource().getLocation().getPath();
-            path = URLDecoder.decode(path, "utf-8");
-            path = new File(path).getPath();
-            ProcessBuilder pb = new ProcessBuilder(
-                SteamSearch.findJRE(),
-                "-cp", path + File.pathSeparatorChar + STS_JAR,
-                "com.evacipated.cardcrawl.modthespire.steam.SteamWorkshop"
-            ).redirectError(ProcessBuilder.Redirect.INHERIT);
-            Process p = pb.start();
-
-            BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-            String title = null;
-            String id = null;
-            String installPath = null;
-            String timeUpdated = null;
-            String line = null;
-            while ((line = reader.readLine()) != null) {
-                System.out.println(line);
-                if (title == null) {
-                    title = line;
-                } else if (id == null) {
-                    id = line;
-                } else if (installPath == null) {
-                    installPath = line;
-                } else if (timeUpdated == null) {
-                    timeUpdated = line;
-                } else {
-                    SteamSearch.WorkshopInfo info = new SteamSearch.WorkshopInfo(title, id, installPath, timeUpdated, line);
-                    if (!info.hasTag("tool") && !info.hasTag("tools")) {
-                        workshopInfos.add(info);
-                    }
-                    title = null;
-                    id = null;
-                    installPath = null;
-                    timeUpdated = null;
-                }
-            }
-            reader.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+//        List<SteamSearch.WorkshopInfo> workshopInfos = new ArrayList<>();
+//        try {
+//            System.out.println("Searching for Workshop items...");
+//            String path = SteamWorkshop.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+//            path = URLDecoder.decode(path, "utf-8");
+//            path = new File(path).getPath();
+//            ProcessBuilder pb = new ProcessBuilder(
+//                SteamSearch.findJRE(),
+//                "-cp", path + File.pathSeparatorChar + STS_JAR,
+//                "com.evacipated.cardcrawl.modthespire.steam.SteamWorkshop"
+//            ).redirectError(ProcessBuilder.Redirect.INHERIT);
+//            Process p = pb.start();
+//
+//            BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+//            String title = null;
+//            String id = null;
+//            String installPath = null;
+//            String timeUpdated = null;
+//            String line = null;
+//            while ((line = reader.readLine()) != null) {
+//                System.out.println(line);
+//                if (title == null) {
+//                    title = line;
+//                } else if (id == null) {
+//                    id = line;
+//                } else if (installPath == null) {
+//                    installPath = line;
+//                } else if (timeUpdated == null) {
+//                    timeUpdated = line;
+//                } else {
+//                    SteamSearch.WorkshopInfo info = new SteamSearch.WorkshopInfo(title, id, installPath, timeUpdated, line);
+//                    if (!info.hasTag("tool") && !info.hasTag("tools")) {
+//                        workshopInfos.add(info);
+//                    }
+//                    title = null;
+//                    id = null;
+//                    installPath = null;
+//                    timeUpdated = null;
+//                }
+//            }
+//            reader.close();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
 
         /*
         for (SteamSearch.WorkshopInfo info : workshopInfos) {
@@ -241,85 +238,85 @@ public class Loader
             System.out.println(Arrays.toString(info.getTags().toArray()));
         }
         //*/
-        System.out.println("Got " + workshopInfos.size() + " workshop items");
+//        System.out.println("Got " + workshopInfos.size() + " workshop items");
 
         // Save workshop last updated times
-        try {
-            Map<String, Integer> lastUpdated = null;
-            String path = SpireConfig.makeFilePath(null, "WorkshopUpdated", "json");
-            if (new File(path).isFile()) {
-                String data = new String(Files.readAllBytes(Paths.get(path)));
-                Gson gson = new Gson();
-                Type type = new TypeToken<Map<String, Integer>>(){}.getType();
-                try {
-                    lastUpdated = gson.fromJson(data, type);
-                } catch (JsonSyntaxException ignore) {
-                    lastUpdated = null;
-                }
-            }
-            if (lastUpdated == null) {
-                lastUpdated = new HashMap<>();
-            }
-
-            for (SteamSearch.WorkshopInfo info : workshopInfos) {
-                if (info == null) {
-                    continue;
-                }
-                int savedTime = lastUpdated.getOrDefault(info.getID(), 0);
-                if (savedTime < info.getTimeUpdated()) {
-                    lastUpdated.put(info.getID(), info.getTimeUpdated());
-                    if (savedTime != 0) {
-                        System.out.println(info.getTitle() + " WAS UPDATED!");
-                    }
-                }
-            }
-
-            Gson gson = new GsonBuilder().setPrettyPrinting().create();
-            String data = gson.toJson(lastUpdated);
-            Files.write(Paths.get(SpireConfig.makeFilePath(null, "WorkshopUpdated", "json")), data.getBytes());
-        } catch (IOException e) {
-            // TODO
-            e.printStackTrace();
-        }
+//        try {
+//            Map<String, Integer> lastUpdated = null;
+//            String path = SpireConfig.makeFilePath(null, "WorkshopUpdated", "json");
+//            if (new File(path).isFile()) {
+//                String data = new String(Files.readAllBytes(Paths.get(path)));
+//                Gson gson = new Gson();
+//                Type type = new TypeToken<Map<String, Integer>>(){}.getType();
+//                try {
+//                    lastUpdated = gson.fromJson(data, type);
+//                } catch (JsonSyntaxException ignore) {
+//                    lastUpdated = null;
+//                }
+//            }
+//            if (lastUpdated == null) {
+//                lastUpdated = new HashMap<>();
+//            }
+//
+//            for (SteamSearch.WorkshopInfo info : workshopInfos) {
+//                if (info == null) {
+//                    continue;
+//                }
+//                int savedTime = lastUpdated.getOrDefault(info.getID(), 0);
+//                if (savedTime < info.getTimeUpdated()) {
+//                    lastUpdated.put(info.getID(), info.getTimeUpdated());
+//                    if (savedTime != 0) {
+//                        System.out.println(info.getTitle() + " WAS UPDATED!");
+//                    }
+//                }
+//            }
+//
+//            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+//            String data = gson.toJson(lastUpdated);
+//            Files.write(Paths.get(SpireConfig.makeFilePath(null, "WorkshopUpdated", "json")), data.getBytes());
+//        } catch (IOException e) {
+//            // TODO
+//            e.printStackTrace();
+//        }
 
 
         // Save workshop locations
-        if (!workshopInfos.isEmpty()) {
-            try {
-                List<String> workshopLocations = new ArrayList<>();
-                for (SteamSearch.WorkshopInfo info : workshopInfos) {
-                    if (info == null) {
-                        continue;
-                    }
-                    workshopLocations.add(info.getInstallPath().toAbsolutePath().toString());
-                }
-
-                Gson gson = new GsonBuilder().setPrettyPrinting().create();
-                String data = gson.toJson(workshopLocations);
-                Files.write(Paths.get(SpireConfig.makeFilePath(null, "WorkshopLocations", "json")), data.getBytes());
-            } catch (IOException e) {
-                // TODO
-                e.printStackTrace();
-            }
-        }
+//        if (!workshopInfos.isEmpty()) {
+//            try {
+//                List<String> workshopLocations = new ArrayList<>();
+//                for (SteamSearch.WorkshopInfo info : workshopInfos) {
+//                    if (info == null) {
+//                        continue;
+//                    }
+//                    workshopLocations.add(info.getInstallPath().toAbsolutePath().toString());
+//                }
+//
+//                Gson gson = new GsonBuilder().setPrettyPrinting().create();
+//                String data = gson.toJson(workshopLocations);
+//                Files.write(Paths.get(SpireConfig.makeFilePath(null, "WorkshopLocations", "json")), data.getBytes());
+//            } catch (IOException e) {
+//                // TODO
+//                e.printStackTrace();
+//            }
+//        }
 
         findGameVersion();
 
-        EventQueue.invokeLater(() -> {
-            ModInfo[] modInfos = getAllMods(workshopInfos);
-            ex = new ModSelectWindow(modInfos, skipLauncher);
-            ex.setVisible(true);
-
-            ex.warnAboutMissingVersions();
-
-            String java_version = System.getProperty("java.version");
-            if (!java_version.startsWith("1.8")) {
-                String msg = "ModTheSpire requires Java version 8 to run properly.\nYou are currently using Java " + java_version;
-                JOptionPane.showMessageDialog(null, msg, "Warning", JOptionPane.WARNING_MESSAGE);
-            }
-
-            ex.startCheckingForMTSUpdate();
-        });
+//        EventQueue.invokeLater(() -> {
+//            ModInfo[] modInfos = getAllMods(workshopInfos);
+//            ex = new ModSelectWindow(modInfos, skipLauncher);
+//            ex.setVisible(true);
+//
+//            ex.warnAboutMissingVersions();
+//
+//            String java_version = System.getProperty("java.version");
+//            if (!java_version.startsWith("1.8")) {
+//                String msg = "ModTheSpire requires Java version 8 to run properly.\nYou are currently using Java " + java_version;
+//                JOptionPane.showMessageDialog(null, msg, "Warning", JOptionPane.WARNING_MESSAGE);
+//            }
+//
+//            ex.startCheckingForMTSUpdate();
+//        });
     }
 
     public static void closeWindow()
