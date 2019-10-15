@@ -3,7 +3,7 @@
 
     <groupId>com.evacipated.cardcrawl</groupId>
     <artifactId>ModTheSpire</artifactId>
-    <version>3.13.1</version>
+    <version>3.14.1</version>
     <packaging>jar</packaging>
 
     <name>ModTheSpire</name>
@@ -34,6 +34,12 @@
             <groupId>org.scannotation</groupId>
             <artifactId>scannotation</artifactId>
             <version>1.0.3</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>javassist</groupId>
+                    <artifactId>javassist</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>commons-logging</groupId>
@@ -140,7 +146,7 @@
                                     </excludes>
                                 </filter>
                                 <filter>
-                                    <artifact>javassist:javassist</artifact>
+                                    <artifact>org.javassist:javassist</artifact>
                                     <includes>
                                         <include>**</include>
                                     </includes>

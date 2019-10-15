@@ -14,9 +14,7 @@ import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import com.vdurmont.semver4j.Semver;
 import javassist.ClassPool;
-import javassist.CtClass;
 import javassist.LoaderClassPath;
-import javassist.NotFoundException;
 import org.objectweb.asm.ClassReader;
 
 import javax.swing.*;
@@ -55,8 +53,10 @@ public class Loader
     public static String STS_VERSION = null;
     public static boolean STS_BETA = false;
     public static boolean allowBeta = false;
+    public static String profileArg = null;
 
     static String[] ARGS;
+    private static ModSelectWindow ex;
 
     public static boolean isModLoaded(String modID)
     {
@@ -129,6 +129,14 @@ public class Loader
         allowBeta = true;
         if (Arrays.asList(args).contains("--allow-beta")) {
             allowBeta = true;
+        }
+
+        boolean skipLauncher = Arrays.asList(args).contains("--skip-launcher");
+
+        List<String> argList = Arrays.asList(args);
+        int profileArgIndex = argList.indexOf("--profile");
+        if (profileArgIndex >= 0 && argList.size() > profileArgIndex + 1) {
+            profileArg = argList.get(profileArgIndex+1);
         }
 
         try {
@@ -295,23 +303,23 @@ public class Loader
             }
         }
 
-//        findGameVersion();
-//
-//        EventQueue.invokeLater(() -> {
-//            ModInfo[] modInfos = getAllMods(workshopInfos);
-//            ex = new ModSelectWindow(modInfos);
-//            ex.setVisible(true);
-//
-//            ex.warnAboutMissingVersions();
-//
-//            String java_version = System.getProperty("java.version");
-//            if (!java_version.startsWith("1.8")) {
-//                String msg = "ModTheSpire requires Java version 8 to run properly.\nYou are currently using Java " + java_version;
-//                JOptionPane.showMessageDialog(null, msg, "Warning", JOptionPane.WARNING_MESSAGE);
-//            }
-//
-//            ex.startCheckingForMTSUpdate();
-//        });
+        findGameVersion();
+
+        EventQueue.invokeLater(() -> {
+            ModInfo[] modInfos = getAllMods(workshopInfos);
+            ex = new ModSelectWindow(modInfos, skipLauncher);
+            ex.setVisible(true);
+
+            ex.warnAboutMissingVersions();
+
+            String java_version = System.getProperty("java.version");
+            if (!java_version.startsWith("1.8")) {
+                String msg = "ModTheSpire requires Java version 8 to run properly.\nYou are currently using Java " + java_version;
+                JOptionPane.showMessageDialog(null, msg, "Warning", JOptionPane.WARNING_MESSAGE);
+            }
+
+            ex.startCheckingForMTSUpdate();
+        });
     }
 
     public static void closeWindow()
@@ -340,41 +348,30 @@ public class Loader
                 MTSClassLoader tmpPatchingLoader = new MTSClassLoader(Loader.class.getResourceAsStream(COREPATCHES_JAR), buildUrlArray(modInfos), Loader.class.getClassLoader());
                 
                 System.out.println("Begin patching...");
-                ClassPool pool = new MTSClassPool(tmpPatchingLoader);
+                MTSClassPool pool = new MTSClassPool(tmpPatchingLoader);
                 pool.insertClassPath(new LoaderClassPath(tmpPatchingLoader));
                 tmpPatchingLoader.addStreamToClassPool(pool); // Inserts infront of above path
-                SortedMap<String, CtClass> ctClasses = new TreeMap<>();
 
                 // Patch enums
                 System.out.printf("Patching enums...");
-                for (CtClass cls : Patcher.patchEnums(tmpPatchingLoader, pool, Loader.class.getResource(Loader.COREPATCHES_JAR))) {
-                    ctClasses.put(countSuperClasses(cls) + cls.getName(), cls);
-                }
+                Patcher.patchEnums(tmpPatchingLoader, pool, Loader.class.getResource(Loader.COREPATCHES_JAR));
                 // Patch SpireEnums from mods
-                for (CtClass cls : Patcher.patchEnums(tmpPatchingLoader, pool, modInfos)) {
-                    ctClasses.put(countSuperClasses(cls) + cls.getName(), cls);
-                }
+                Patcher.patchEnums(tmpPatchingLoader, pool, modInfos);
                 System.out.println("Done.");
 
                 // Find and inject core patches
                 System.out.println("Finding core patches...");
-                for (CtClass cls : Patcher.injectPatches(tmpPatchingLoader, pool, Patcher.findPatches(new URL[]{Loader.class.getResource(Loader.COREPATCHES_JAR)}))) {
-                    ctClasses.put(countSuperClasses(cls) + cls.getName(), cls);
-                }
+                Patcher.injectPatches(tmpPatchingLoader, pool, Patcher.findPatches(new URL[]{Loader.class.getResource(Loader.COREPATCHES_JAR)}));
                 // Find and inject mod patches
                 System.out.println("Finding patches...");
-                for (CtClass cls : Patcher.injectPatches(tmpPatchingLoader, pool, Patcher.findPatches(MODINFOS))) {
-                    ctClasses.put(countSuperClasses(cls) + cls.getName(), cls);
-                }
+                Patcher.injectPatches(tmpPatchingLoader, pool, Patcher.findPatches(MODINFOS));
 
-                for (CtClass cls : Patcher.patchOverrides(tmpPatchingLoader, pool, MODINFOS)) {
-                    ctClasses.put(countSuperClasses(cls) + cls.getName(), cls);
-                }
+                Patcher.patchOverrides(tmpPatchingLoader, pool, MODINFOS);
 
                 Patcher.finalizePatches(tmpPatchingLoader);
-                Patcher.compilePatches(loader, ctClasses);
 
-                ctClasses.clear();
+                Patcher.compilePatches(loader, pool);
+
                 tmpPatchingLoader.close();
 
                 POOL = new MTSClassPool(loader);
@@ -743,22 +740,5 @@ public class Loader
                 System.out.println("Unknown");
             }
         }
-    }
-
-    private static int countSuperClasses(CtClass cls)
-    {
-        String name = cls.getName();
-        int count = 0;
-
-        while (cls != null) {
-            try {
-                cls = cls.getSuperclass();
-            } catch (NotFoundException e) {
-                break;
-            }
-            ++count;
-        }
-
-        return count;
     }
 }
